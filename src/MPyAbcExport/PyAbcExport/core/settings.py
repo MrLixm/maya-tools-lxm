@@ -14,10 +14,12 @@ class BaseArgument(object):
         pass
 
 
-class FrameRange(BaseArgument):
+class FrameRangeArg(BaseArgument):
 
     def __init__(self, parent):
 
+        self._parent = None
+        self.child = None
         self.data = {
             "start": 1,
             "stop": 100,
@@ -33,25 +35,41 @@ class FrameRange(BaseArgument):
     @parent.setter
     def parent(self, parent_value):
 
-        if isinstance(parent_value, FrameRange):
+        if isinstance(parent_value, FrameRangeArg):
             parent_value.add_child(self)
+            self.start = parent_value.start + 1
 
         self._parent = parent_value
         return
 
-    def add_child(self, children):
-        pass
+    def add_child(self, child):
+        """
+        Args:
+            child(FrameRange):
+                FrameRange instances that have this instance as parent
+        """
+        self.child = child
+        return
 
     @property
     def is_subframerange(self):
         """
         Return True if this instance is not an unique frame range.
-        True meaning its parent is a FrameRange instance.
+        True meaning its parent is a FrameRangeArg instance.
 
         Returns:
             bool:
         """
-        return isinstance(self.parent, FrameRange)
+        return isinstance(self.parent, FrameRangeArg)
+
+    @property
+    def frame_relative_sample(self):
+        return self.data["frs"]
+
+    @frame_relative_sample.setter
+    def frame_relative_sample(self, frame_relative_sample_value):
+        # TODO
+        self.data["frs"] = frame_relative_sample_value
 
     @property
     def start(self):
@@ -71,7 +89,7 @@ class FrameRange(BaseArgument):
         # check before set
         if self.is_subframerange:
             logger.error(
-                "[FrameRange][start.setter] This instance has a FrameRange "
+                "[FrameRangeArg][start.setter] This instance has a FrameRangeArg "
                 "as parent: you cannnot set the start value with <{}>"
                 "".format(start_value)
             )
@@ -82,10 +100,102 @@ class FrameRange(BaseArgument):
 
     @property
     def stop(self):
-        return self._stop
+        """
+        Returns:
+            int: stop frame
+        """
+        return self.data["stop"]
 
-    def as_jobarg(self):
-        pass
+    @stop.setter
+    def stop(self, stop_value):
+        """
+        Args:
+            stop_value(int):
+        """
+        stop_value = int(stop_value)
+        if stop_value < self.start:
+            raise TypeError(
+                "The given stop value <{}> is smaller than the start value <{}>"
+                "".format(stop_value, self.start)
+            )
+
+        self.data["stop"] = stop_value
+        return
+
+    @property
+    def step(self):
+        return self.data["step"]
+
+    @step.setter
+    def step(self, step_value):
+        # TODO
+        self.data["step"] = step_value
+
+    @property
+    def arg_repr(self):
+
+        outputv = (
+            "-frameRange {} {} -step {}"
+            "".format(self.start, self.stop, self.step)
+        )
+        if self.frame_relative_sample:
+            outputv = (
+                "{} -frameRelativeSample {}"
+                " -frameRelativeSample {}"
+                " -frameRelativeSample {}"
+                "".format(
+                    outputv,
+                    self.frame_relative_sample[0],
+                    self.frame_relative_sample[1],
+                    self.frame_relative_sample[2]
+                )
+            )
+
+        return outputv
+
+
+class FilepathArg(BaseArgument):
+
+    def __init__(self, parent):
+        """
+
+        Args:
+            parent(ExportSettings):
+        """
+        self._value = ""
+        self.parent = parent
+
+    @property
+    def arg_repr(self):
+        return "-file {}".format(self.value)
+
+    @property
+    def value(self):
+        """
+        Returns:
+            str: path to the alembic file. Ex: "C:/dir/file.abc"
+        """
+        output = self._value
+        output = output.replace("$FSTART", str(self.parent.framerange.start))
+        output = output.replace("$FSTOP", str(self.parent.framerange.stop))
+        output = output.replace("$STEP", str(self.parent.framerange.step))
+        return output
+
+    @value.setter
+    def value(self, filepath):
+        """
+        Args:
+            filepath(str):
+                Path to the alembic file with the extension.
+
+                This path can contain the following tokens:
+                - $FSTART : replaced by the start frame
+                - $FSTOP : replace by the stop frame
+                - $STEP :  replace by the frame step
+
+        """
+        self._value = filepath
+        return
 
 
 class ExportSettings(object):
@@ -93,8 +203,8 @@ class ExportSettings(object):
     def __init__(self):
 
         self.data = {
-            "filepath": "",
-            "framerange": FrameRange(self)
+            "filepath": FilepathArg(self),
+            "framerange": FrameRangeArg(self)
         }
 
         return
@@ -105,11 +215,8 @@ class ExportSettings(object):
         Returns:
             str: path to the alembic file. Ex: "C:/dir/file.abc"
         """
-        output = self.data["filepath"]
-        output = output.replace("$FSTART", str(self.framerange.start))
-        output = output.replace("$FSTOP", str(self.framerange.stop))
-        output = output.replace("$STEP", str(self.framerange.step))
-        return output
+        outputv = self.data["filepath"]
+        return outputv.value
 
     @filepath.setter
     def filepath(self, filepath_value):
@@ -124,21 +231,24 @@ class ExportSettings(object):
                 - $STEP :  replace by the frame step
 
         """
-        self.data["filepath"] = filepath_value
+        inputv = FilepathArg(self)
+        inputv.value = filepath_value
+        self.data["filepath"] = inputv
         return
 
     @property
     def framerange(self):
         """
         Returns:
-            FrameRange: FrameRange instance
+            FrameRangeArg: FrameRange instance
         """
         return self.data["framerange"]
 
     def get_as_jobarg(self):
         """
         Returns:
-            str: properly formatted string for the j argument on the cmds.AbcExport command
+            str: properly formatted string for the `j` argument on
+             the cmds.AbcExport command.
         """
 
         output = list()
