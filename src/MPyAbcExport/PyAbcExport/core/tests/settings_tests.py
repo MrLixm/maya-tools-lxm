@@ -23,6 +23,7 @@ def test01():
     exs.framerange.stop = 1069
 
     fr02 = FrameRange(parent=exs.framerange)
+    fr02.stop = 1068  # this raise a TypeError as  fr02.start=1070
     fr02.stop = 1088
     fr02.step = 0.5
 

@@ -1,13 +1,19 @@
 
-# About
-
-This package allows converting and exporting a MASH network as a pointcloud.
+This package allows converting and exporting a MASH network as a pointcloud 
 (using the Alembic file format).
+
 You have to handle the instance source export yourself thought.
 
-Script made by Liam Collod.
-Credit to Onouris for showing me the maya setup.
 
+# About
+
+- **Author**: Liam Collod.
+
+- **Credits**:
+  
+  - Onouris for showing me the maya setup.
+    
+Tested on Maya 2022.
 
 # How to run
 

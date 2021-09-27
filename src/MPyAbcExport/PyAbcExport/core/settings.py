@@ -17,6 +17,15 @@ class BaseArgument(object):
 class FrameRangeArg(BaseArgument):
 
     def __init__(self, parent):
+        """
+        Utility class to define a frame range to export.
+        Should be parented to an ExportSettings or an other FrameRangeArg.
+
+        Args:
+            parent(FrameRangeArg or ExportSettings):
+             If the parent is of type FrameRangeArg, this mean this instance
+              will be a subframerange to aditionally export.
+        """
 
         self._parent = None
         self.child = None
@@ -64,18 +73,40 @@ class FrameRangeArg(BaseArgument):
 
     @property
     def frame_relative_sample(self):
+        """
+        Returns:
+            list of float:
+        """
         return self.data["frs"]
 
     @frame_relative_sample.setter
     def frame_relative_sample(self, frame_relative_sample_value):
-        # TODO
+        """
+        Args:
+            frame_relative_sample_value(list of float):
+                list of frame samples, len==2 or 3
+        Raises:
+            TypeError: if the argument passed has incorrect values.
+        """
+
+        # value checkup
+        first_value = frame_relative_sample_value[0]
+        second_value = frame_relative_sample_value[1]
+        if first_value > second_value:
+            raise TypeError(
+                "The given frame_relative_sample_value <{}> is not valid:"
+                "first value is bigger than second one"
+                "".format(frame_relative_sample_value)
+            )
+
         self.data["frs"] = frame_relative_sample_value
+        return
 
     @property
     def start(self):
         """
         Returns:
-            int: start frame
+            int: frame at which the frame range is starting.
         """
         return self.data["start"]
 
@@ -83,7 +114,7 @@ class FrameRangeArg(BaseArgument):
     def start(self, start_value):
         """
         Args:
-            start_value(int):
+            start_value(int): frame at which the frame range should start.
         """
 
         # check before set
@@ -102,7 +133,7 @@ class FrameRangeArg(BaseArgument):
     def stop(self):
         """
         Returns:
-            int: stop frame
+            int: frame at which the frame range is stopping.
         """
         return self.data["stop"]
 
@@ -110,7 +141,11 @@ class FrameRangeArg(BaseArgument):
     def stop(self, stop_value):
         """
         Args:
-            stop_value(int):
+            stop_value(int): frame at which the frame range should stop.
+                Must be bigger than the start frame.
+
+        Raises:
+            TypeError: if the argument is smaller than the start frame.
         """
         stop_value = int(stop_value)
         if stop_value < self.start:
