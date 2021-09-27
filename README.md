@@ -1,6 +1,6 @@
 **Author:** Liam Collod.
 
-Collections of script I wrote for Autodesk's Maya texturing software.
+Collections of script I wrote for Autodesk's Maya software.
 
 ## License
 
