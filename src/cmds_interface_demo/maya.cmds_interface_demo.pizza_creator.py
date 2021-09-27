@@ -20,6 +20,8 @@ API
 Where you have all your functions that interact with your scene
 
 """
+
+# to store all the pizza created by the user
 PIZZA_DATABASE = []
 
 def create_pizza(name):
