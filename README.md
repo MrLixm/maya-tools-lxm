@@ -20,6 +20,10 @@ Else a README.md should be supplied.
 
 ## What's Inside
 
+- cmds_interface_demo
+
+  A script to demonstrate how you can use `cmds` to create a quick interface in Maya.
+
 - snippets
     Snippets are small standalone script 
     
