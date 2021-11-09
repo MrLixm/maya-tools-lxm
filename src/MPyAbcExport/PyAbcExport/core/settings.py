@@ -8,6 +8,8 @@ class BaseArgument(object):
     @abstractproperty
     def arg_repr(self):
         """
+        Flatten the class to the maya AbcExport command it correspond to.
+
         Returns:
             str:
         """
@@ -34,7 +36,7 @@ class FrameRangeArg(BaseArgument):
             "stop": 100,
             "step": 1.0,
             "frs": []
-        }
+        }  # default values are defined here
         return
 
     @property
@@ -165,6 +167,7 @@ class FrameRangeArg(BaseArgument):
     def step(self, step_value):
         # TODO
         self.data["step"] = step_value
+        return
 
     @property
     def arg_repr(self):
@@ -191,14 +194,33 @@ class FrameRangeArg(BaseArgument):
 
 class FilepathArg(BaseArgument):
 
-    def __init__(self, parent):
+    def __init__(self, parent, filepath=None):
         """
+        Class that only hold the export path of an alembic file.
+        Allowing it to have dynamic tokens.
+
+        Correspond to the -file argument
 
         Args:
-            parent(ExportSettings):
+            parent(ExportSettings): ExportSettings object
+            filepath(str or None):
+                Path to the alembic file with the extension.
+
+                Make sure the path is correctly formed before.
+
+                This path can contain the following tokens:
+                - $FSTART : replaced by the start frame
+                - $FSTOP : replace by the stop frame
+                - $STEP :  replace by the frame step
+
         """
         self._value = ""
         self.parent = parent
+
+        if filepath:
+            self.value = filepath
+
+        return
 
     @property
     def arg_repr(self):
@@ -223,6 +245,8 @@ class FilepathArg(BaseArgument):
             filepath(str):
                 Path to the alembic file with the extension.
 
+                Make sure the path is correctly formed before.
+
                 This path can contain the following tokens:
                 - $FSTART : replaced by the start frame
                 - $FSTOP : replace by the stop frame
@@ -233,32 +257,106 @@ class FilepathArg(BaseArgument):
         return
 
 
+class AttrsArg(BaseArgument):
+
+    arg_name = "attr"
+
+    def __init__(self, parent, attributes=None):
+        """
+        Utility class to define a list of names of attributes to export.
+        Should be parented to an ExportSettings.
+
+        Args:
+            parent(ExportSettings): not used for now
+            attributes(str or list or None): single attribute name or an
+                iterable object of them (it call extend() instead).
+        """
+
+        self._parent = None
+        self.attributes = []
+        if attributes:
+            self.add(attributes=attributes)
+        return
+
+    def add(self, attributes):
+        """
+        Add the given attribute(s) name to the list of attribute to export.
+        Args:
+            attributes(str or list): a single attribute name or an
+                iterable object of them (it call extend() instead).
+        """
+        if isinstance(attributes, str):
+            self.attributes.append(attributes)
+        else:
+            self.attributes.extend(attributes)
+        return
+
+    @property
+    def arg_repr(self):
+
+        output = list()
+        for attr in self.attributes:
+            output.append("-{} {}".format(self.arg_name, attr))
+
+        return " ".join(output)  # format to string before return
+
+
+class AttrsPrefixArg(AttrsArg):
+    """
+    Same as the subclass but correspond to the attrPrefix option that export
+    all the attributes having the given prefix.
+    """
+
+    arg_name = "attrPrefix"
+
+
 class ExportSettings(object):
 
     def __init__(self):
+        """
+        Class holding all the argument required to export an alembic.
+        Calling <arg_repr> return the flattened representation of the class
+        and its children for the maya AbcExport command.
 
+        """
+
+        # values can only be subclass of BaseArgument /!\
         self.data = {
             "filepath": FilepathArg(self),
-            "framerange": FrameRangeArg(self)
+            "framerange": FrameRangeArg(self),
+            "attributes": AttrsArg(self)
         }
 
+        return
+
+    @property
+    def attributes(self):
+        return self.data["attributes"]
+
+    @attributes.setter
+    def attributes(self, attributes_value):
+        if not isinstance(attributes_value, AttrsArg):
+            attributes_value = AttrsArg(self, attributes_value)
+        self.data["attributes"] = attributes_value
         return
 
     @property
     def filepath(self):
         """
         Returns:
-            str: path to the alembic file. Ex: "C:/dir/file.abc"
+            FilepathArg: path to the alembic file as a FilepathArg object.
         """
-        outputv = self.data["filepath"]
-        return outputv.value
+        return self.data["filepath"]
 
     @filepath.setter
-    def filepath(self, filepath_value):
+    def filepath(self, filepath_object):
         """
         Args:
-            filepath_value(str):
+            filepath_object(str or FilepathArg):
                 Path to the alembic file with the extension.
+                As a string or an already processed FilepathArg object.
+
+                Make sure the path is correctly formed before.
 
                 This path can contain the following tokens:
                 - $FSTART : replaced by the start frame
@@ -266,9 +364,9 @@ class ExportSettings(object):
                 - $STEP :  replace by the frame step
 
         """
-        inputv = FilepathArg(self)
-        inputv.value = filepath_value
-        self.data["filepath"] = inputv
+        if not isinstance(filepath_object, FilepathArg):
+            filepath_object = FilepathArg(self, filepath_object)
+        self.data["filepath"] = filepath_object
         return
 
     @property
@@ -279,7 +377,7 @@ class ExportSettings(object):
         """
         return self.data["framerange"]
 
-    def get_as_jobarg(self):
+    def arg_repr(self):
         """
         Returns:
             str: properly formatted string for the `j` argument on
@@ -290,4 +388,4 @@ class ExportSettings(object):
         for arg in self.data.items():
             output.append(arg.arg_repr)
 
-        return " ".join(output)
+        return " ".join(output)  # format to string before return

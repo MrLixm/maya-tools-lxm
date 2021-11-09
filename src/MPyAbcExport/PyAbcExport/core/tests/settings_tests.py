@@ -6,6 +6,7 @@
 def test01():
 
     exs = ExportSettings()
+    exs.filepath = "C:\\temp.$FSTART.abc"  # with token
     exs.filepath = "C:\\temp.abc"
     exs.attr = ["myAttribute01", "myOtherAttribute"]
     exs.attr_prefix = ["xgen", "abc_"]
@@ -31,5 +32,7 @@ def test01():
     fr03.stop = 1100
     fr03.step = 1.0  # not usefull
     fr03.frame_relative_sample = [-0.25, 0, 0.25]
+
+    command = exs.arg_repr
 
     return
