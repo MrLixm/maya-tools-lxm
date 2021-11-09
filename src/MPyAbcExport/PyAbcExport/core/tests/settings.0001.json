@@ -1,0 +1,51 @@
+{
+  "header": {
+    "type": "MPyAbcExport.config",
+    "description": "Alembic export settings example config"
+  },
+  "content": {
+    "filepath": "",
+    "attributes": [],
+    "attributes_prefix": [],
+    "auto_subd": false,
+    "filter_euler": false,
+    "no_normals": true,
+    "renderable_only": false,
+    "selected": false,
+    "strip_namespaces": [true,null],
+    "user_attributes": [],
+    "user_attributes_prefix": [],
+    "uv_write": true,
+    "uv_write_only": false,
+    "whole_frame_geo": true,
+    "world_space": true,
+    "write_color_sets": false,
+    "write_face_sets": true,
+    "write_visibility": true,
+    "write_uv_sets": false,
+    "framerange": {
+      "0": {
+        "start": 1001,
+        "stop": 1100,
+        "step": 1,
+        "frs": []
+      },
+      "1": {
+        "start": 1100,
+        "stop": 1200,
+        "step": 0.5,
+        "frs": [-0.25,0,0.25]
+      }
+    },
+    "callbacks": {
+      "per_frame": {
+        "python": "",
+        "mel": ""
+      },
+      "post_job": {
+        "python": "",
+        "mel": ""
+      }
+    }
+  }
+}
