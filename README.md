@@ -12,7 +12,6 @@ doesn't define a License,
 To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ .
 
 
-
 ## Utilisation
 
 Everything should be written in the top docstring of each script.
@@ -20,11 +19,16 @@ Else a README.md should be supplied.
 
 ## What's Inside
 
-- cmds_interface_demo
+- `cmds_interface_demo`
 
-  A script to demonstrate how you can use `cmds` to create a quick interface in Maya.
+    A script to demonstrate how you can use `cmds` to create a quick interface in Maya.
 
-- snippets
+- `mash2pointcloud`
+
+    Export a Mash Network to an Alembic point-cloud.
+
+- `snippets`
+
     Snippets are small standalone script 
     
     - `maya_select_similar.py` : 

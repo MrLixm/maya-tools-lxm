@@ -1,5 +1,5 @@
 """
-VERSION=0.0.1
+VERSION=0.0.2
 
 Author: Liam Collod
 Last Modified: 23-01-2022
@@ -15,6 +15,7 @@ Export a Mash Network to an Alembic point-cloud.
 import logging
 import os
 import sys
+import time
 import webbrowser
 
 from maya import cmds
@@ -136,7 +137,8 @@ class ParticleSystem(object):
             cmds.delete(self.shape)
         except Exception as excp:
             logger.warning(
-                "[ParticleSystem][delete] Can't delete nParticle shape <{}>: {}"
+                "[ParticleSystem][delete] Can't delete nParticle shape <{}>"
+                "(not an issue): {}"
                 "".format(self.shape, excp)
             )
 
@@ -176,6 +178,11 @@ class ParticleSystem(object):
             "{}.{}".format(self.shape, target)
         )
 
+        logger.debug(
+            "[ParticleSystem][connect] Finished with source={},target={}."
+            "".format(source, target)
+        )
+
         return
 
     def set_playfromcache(self, value):
@@ -203,6 +210,11 @@ class ParticleSystem(object):
             string=expression,
         )
 
+        logger.debug(
+            "[ParticleSystem][create_expression] Finished with expression="
+            "<{}>.".format(expression)
+        )
+
         return
 
     def create_attr(self, name, data_type):
@@ -213,12 +225,22 @@ class ParticleSystem(object):
             data_type(str): data type to use for the attribute
 
         """
+        # Had a bug were the dynamic expression was not computed if
+        # the viewport was not refreshed.
+        cmds.refresh()
+
         cmds.addAttr(
             self.shape,
             ln=name,
             dataType=data_type,
             keyable=True
         )
+
+        logger.debug(
+            "[ParticleSystem][create_attr] Finished with name=<{}>,"
+            "data_type=<{}>.".format(name, data_type)
+        )
+
         return
 
 
@@ -323,8 +345,10 @@ class Scene(object):
         # get the current selected mash network
         self.mashnw = get_mash_network()
 
+        psys_name = self.mashnw + "_pointcloud"
+
         # create the Particle system
-        self.psys = ParticleSystem(self.mashnw + "_ps")
+        self.psys = ParticleSystem(psys_name)
         self.psys.build()
 
         # Setup the ParticleSystem for export
@@ -339,14 +363,14 @@ class Scene(object):
 
             self.psys.create_attr(attr_name, attr_data["dataType"])
 
-            if attr_data["expression"]:
+            if attr_data["mashAttr"]:
                 expr = (
                     "{}.{} = {}.{};"
                     "".format(
                         self.psys.shape,
                         attr_name,
                         self.mashnw,
-                        attr_data["expression"]
+                        attr_data["mashAttr"]
                     )
                 )
                 self.psys.create_expression(expr)
@@ -375,7 +399,7 @@ class Scene(object):
         export_path = cmds.fileDialog2(
             caption="Give an export path for the Alembic.",
             fileMode=0,
-        )
+        )[0]  # type: str
 
         if not export_path:
             raise InterruptedError(
@@ -401,20 +425,35 @@ class Scene(object):
 
 def run():
 
+    stime = time.clock()
+
+    """scene_config(dict)
+    
+    Configure how the scene is built and exported.
+    
+    [build.particleSystem](dict):
+        each key is an attribute name to create
+    
+        rotation and scale doesn't have a corresponding mashAttr cause they are 
+        automatically linked to the mash attribute of the same name.
+        
+        think to add them in [export.alembic.attributes]
+        
+    """
     scene_config = {
         "build": {
             "particleSystem": {
                 "rotation": {
                     "dataType": "vectorArray",
-                    "expression": False
+                    "mashAttr": ""
                 },
                 "scale": {
                     "dataType": "vectorArray",
-                    "expression": False
+                    "mashAttr": ""
                 },
                 "objectIndex": {
                     "dataType": "vectorArray",
-                    "expression": "inIdPP"
+                    "mashAttr": "inIdPP"
                 }
             },
         },
@@ -433,7 +472,7 @@ def run():
     # raise a dialog to the user before endign the script
     user_choice = cmds.confirmDialog(
         title='Abc Exported',
-        message='Abc was exported to \n{}'.format(export_path),
+        message='Abc was exported to:\n{}'.format(export_path),
         button=['Open Folder', 'Close'],
         defaultButton='Open Folder',
         cancelButton='Close',
@@ -443,6 +482,7 @@ def run():
     if user_choice == 'Open Folder':
         webbrowser.open(os.path.dirname(export_path))
 
+    logger.info("[run] Finished in <{}>s".format(time.clock() - stime))
     return
 
 
