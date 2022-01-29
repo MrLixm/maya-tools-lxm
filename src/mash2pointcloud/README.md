@@ -15,10 +15,45 @@ Export a Mash Network to an Alembic point-cloud.
 
 _(wip)_
 
-You can use the `scene_config` dictionnary.
-The `build.particleSystems` keys allow you to create a new attribute to export
-(you must also add it in `export.alembic.attributes`). This attribute can be
-linked to an attribute on the mash node by specifying it in the `mashAttr` key.
+You can use the `scene_config` dictionnary:
+
+The `build.particleSystems` keys allow you to create a new attribute on the 
+particleSystem for export (you must also add it in `export.alembic.attributes`
+). This attribute can be then connected to an attribute on the `Mash Node` by
+specifying it in the `mashAttr` key.
+
+The `mashAttr` key except the path of the attribute on the `Mash Node` that
+must be connected to the newly created p.s. attribute. Make sure these two
+attributes are of the same type. 
+
+### Export a randomColor attribute
+
+This is an enough special case to be explained here. If you are using Mash
+Instances you might now that the `color` mash node can't be used. But here is 
+a workaround as [explained here](https://redshift.maxon.net/topic/24542/maya-making-mash-color-node-working-with-instances-probability-node).
+
+The issue is that the `point color` attribute must be gathered on the mash
+`Python` node. To avoid rewriting all the script while actually not needed,
+the solution is simply to create a new attribute on the Mash Node called like
+`colorPP`, and connect the `Python.colorOutPP` attribute to it. Then in 
+the script you just have to modify the `scene_config` dict as usual :
+```python
+scene_config = {
+    "build": {
+        "particleSystem": {
+            "MyColorRandom": {
+                "dataType": "vectorArray",
+                "mashAttr": "colorPP"
+            }
+        },
+    },
+    "export": {
+        "alembic": {
+            "attributes": ["MyColorRandom"]
+        }
+    }   
+}
+```
 
 ## Licensing
 
@@ -26,4 +61,5 @@ See [LICENSE.md](./LICENSE.md).
 
 ## Credits
 
-Credit to Onouris on Discord for showing me the initial nParticle setup.
+Huge thanks to Onouris on Discord for showing me the initial nParticle setup 
+that saved my ass when I needed it.
