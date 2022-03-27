@@ -262,13 +262,20 @@ def get_mash_network():
     return user_sel
 
 
-def export_abc(meshs, path, attributes=None):
+def export_abc(meshs, path, attributes=None, frame_range=None, frs=None):
     """
 
     Args:
-        meshs(list):
-        path(str): export path with extension
-        attributes(list or None): list of attributes to include in the export.
+        meshs(list of string):
+        path(str):
+            export path with extension
+        attributes(list or None):
+            list of attributes to include in the export.
+        frame_range(list of int or None):
+            list of 2 values, the first one being the start frame
+             and the last one the last frame
+        frs(list of float or None):
+            frame relatives samples to export
 
     Returns:
         str: path to the exported alembic file
@@ -285,9 +292,18 @@ def export_abc(meshs, path, attributes=None):
         for attr in attributes:
             abc_attrs += "-attr {} ".format(attr)
 
+    frame_range = frame_range or [1, 1]
+    frame_range = "{} {}".format(frame_range[0], frame_range[1])
+
+    frs = ""
+    if frs:
+        for frs_item in frs:
+            frs += "-frameRelativeSample {} ".format(frs_item)
+
     export_command = (
-        "-frameRange 1 1 "
-        "{0}"
+        "-frameRange {0} "
+        "{1}"
+        "{2}"
         "-uvWrite "
         "-writeFaceSets "
         "-worldSpace "
@@ -295,9 +311,9 @@ def export_abc(meshs, path, attributes=None):
         "-stripNamespaces "
         "-autoSubd "
         "-dataFormat ogawa "
-        "{1}"
-        "-file {2}"
-        "".format(abc_attrs, abc_meshs, path)
+        "{3}"
+        "-file {4}"
+        "".format(frame_range, frs, abc_attrs, abc_meshs, path)
     )
 
     try:
@@ -415,7 +431,9 @@ class Scene(object):
         export_abc(
             meshs=[self.psys.name],
             path=export_path,
-            attributes=self.config["export"]["alembic"]["attributes"]
+            attributes=self.config["export"]["alembic"]["attributes"],
+            frame_range=self.config["export"]["alembic"]["frame_range"],
+            frs=self.config["export"]["alembic"]["frame_relative_samples"]
         )
 
         logger.debug("[Scene][export] Finished.")
@@ -459,15 +477,19 @@ def run():
         },
         "export": {
             "alembic": {
-                "attributes": ["rotation", "scale", "objectIndex"]
+                "frame_range": [1, 1],
+                "attributes": ["rotation", "scale", "objectIndex"],
+                "frame_relative_samples": []
             }
         }
     }
 
     scene = Scene(config=scene_config)
-    scene.build()
-    export_path = scene.export()
-    scene.clean()
+    try:
+        scene.build()
+        export_path = scene.export()
+    finally:
+        scene.clean()
 
     # raise a dialog to the user before endign the script
     user_choice = cmds.confirmDialog(
