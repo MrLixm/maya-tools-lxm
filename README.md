@@ -1,16 +1,6 @@
-**Author:** Liam Collod.
+![header:maya logo](./img/header.jpg)
 
-Collections of script I wrote for Autodesk's Maya software.
-
-## License
-
-If no LICENSE.md file is clearly specified for a script, OR the _top docstring_ 
-doesn't define a License,
- the script is by default shared under `Creative Commons Attribution
- -NonCommercial-ShareAlike 4.0 International` License.
-
-To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ .
-
+Collection of scripting stuff I wrote for Autodesk's Maya software.
 
 ## Utilisation
 
@@ -19,31 +9,35 @@ Else a README.md should be supplied.
 
 ## What's Inside
 
-- `cmds_interface_demo`
+- [`cmds_interface_demo`](./src/cmds_interface_demo)
 
     A script to demonstrate how you can use `cmds` to create a quick interface in Maya.
 
-- `mash2pointcloud`
+- [`mash2pointcloud`](./src/mash2pointcloud)
 
     Export a Mash Network to an Alembic point-cloud.
 
-- `snippets`
+- [`selectSimilarPolyCount`](./src/selectSimilarPolyCount)
 
-    Snippets are small standalone script 
-    
-    - `maya_select_similar.py` : 
+    From a selected object , find in the whole scene which geometric objects has the
+same vertex number and select them.
 
-        From a selected object , find in the whole scene which geometric objects has the
-    same vertex number and select them.
+- [`polyTransferUVs`](./src/polyTransferUVs)
 
-    - `maya_transfer_uvs.py`: 
+    Transfer UVs from one object to multiple objects.
 
-      Transfer UVs from one object to multiple objects.
+- [`shapeNameConform`](./src/shapeNameConform)
 
-    - `maya_rename_shape.py` : 
-    
-      Make the shapes of a dag object have the same name as the transform ( for when
-    they are different).
+    Make the shapes of a dag object have the same name as the transform ( for when
+they are different).
 
 
-Contact: monsieurlixm@gmail.com
+## Licensing
+
+License should be specified in each directory or in the top of each file else
+the terms specified in the root's [LICENSE.md](./LICENSE.md) file will apply.
+
+
+## Contact
+
+[monsieurlixm@gmail.com](mailto:monsieurlixm@gmail.com)
