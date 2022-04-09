@@ -1,0 +1,13 @@
+{
+  "name": "m2p",
+  "version": "1.0.0",
+  "author": "Liam Collod",
+  "license": "Apache 2.0",
+  "description": "Export a Mash Network to an Alembic point-cloud..",
+  "keywords": ["vfx", "maya", "python", "alembic", "mash", "pointcloud"],
+  "dependencies": {},
+  "engines": {
+    "maya": "?",
+    "python": "2.7.13"
+  }
+}

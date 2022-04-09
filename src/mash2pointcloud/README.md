@@ -55,6 +55,10 @@ scene_config = {
 }
 ```
 
+## Current Issues
+
+- Doesn't seem to support animated attribute export except from P.
+
 ## Licensing
 
 See [LICENSE.md](./LICENSE.md).
