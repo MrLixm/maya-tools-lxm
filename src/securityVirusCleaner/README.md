@@ -4,7 +4,9 @@ A utility aimed at removing the `vaccine.py` virus from the currently openened
 maya scene and from  your system. This is a "harmless" virus, but you don't
 want it to spread.
 
-![window screenshot](img.png)
+|Clean Scene                   | Infected scene cleaned    |
+|:----------------------------:|:-------------------------:|
+|![window screenshot](img.png) | ![window screenshot](img-infected.png) |
 
 This doesn't prevent the virus to infects your system/files again. For this 
 you can have a look at this thread :
