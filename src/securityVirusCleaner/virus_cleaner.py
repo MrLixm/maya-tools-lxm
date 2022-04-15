@@ -1,5 +1,5 @@
 """
-version=1
+version=2
 author=Liam Collod
 contributors={
     "Alan Weider": "initial script logic about what to clean"
@@ -327,6 +327,12 @@ def check_virus_exists():
     """
     exists_list = list(map(lambda vo: vo(), VIRUSOBJECTS))
     exists_list = list(filter(lambda vo: vo.exists, exists_list))
+
+    # if only the UserSetup file exists but none of the other virus objects,
+    # means there is no infection.
+    usersetupfiltered = list(map(lambda vo: isinstance(vo, (UserSetupFilePy, UserSetupFilePyc)), exists_list))
+    if all(usersetupfiltered):
+        exists_list = list()
 
     logger.debug(
         "[check_virus_exists] Found {} virus existing on scene and system."
