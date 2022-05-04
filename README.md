@@ -31,6 +31,16 @@ same vertex number and select them.
     Make the shapes of a dag object have the same name as the transform ( for when
 they are different).
 
+- [`securityVirusCleaner`](./src/securityVirusCleaner)
+
+    A utility aimed at removing the `vaccine.py` virus from the currently openened
+maya scene and from your system.
+
+- [`resetWindowPosition`](./src/resetWindowPosition)
+
+    Useful to reset a maya window that might have gone off-screeen and is not
+visible anymore.
+
 
 ## Licensing
 
