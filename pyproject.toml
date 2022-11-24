@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "Autodesk_Maya"
+version = "0.1.0"
+description = "Collection of resources and script for Autodesk Maya"
+authors = ["Liam Collod <monsieurlixm@gmail.com>"]
+readme = "README.md"
+packages = [{include = "autodesk_maya"}]
+
+[tool.poetry.dependencies]
+python = ">2.7"
+
+[tool.poetry.group.dev.dependencies]
+black = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
