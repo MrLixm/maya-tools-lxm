@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "autodesk_maya"}]
 
 [tool.poetry.dependencies]
-python = ">2.7"
+python = "^3.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
