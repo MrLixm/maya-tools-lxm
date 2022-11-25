@@ -1,10 +1,10 @@
 """
-version=2
+version=3
 author=Liam Collod
 contributors={
     "Alan Weider": "initial script logic about what to clean"
 }
-last_modified=15/04/2022
+last_modified=25/11/2022
 python>2.7
 
 [What]
@@ -28,29 +28,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-import abc
-from abc import abstractmethod, abstractproperty
-from datetime import datetime
-import logging
-import os.path
-import pprint
-import sys
-import webbrowser
-
-import maya.cmds as cmds
-
 __all__ = [
     "VIRUSOBJECTS",
     "check_virus_exists",
     "delete_virus",
-    "MainWindow"
+    "MainWindow",
 ]
 
+import abc
+import logging
+import os.path
+import pprint
+import sys
+import webbrowser  # do not delete, used in command string
+from abc import abstractmethod, abstractproperty
+from datetime import datetime
+
+import maya.cmds as cmds
+
 # compatible with Python 2 *and* 3:
-ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
+ABC = abc.ABCMeta("ABC", (object,), {"__slots__": ()})
 
 
 def setup_logging(level):
+    """
+    Create logger for current file and handle the case where the logger already exist.
+
+    Args:
+        level: logging.XXX level
+    """
     logger = logging.getLogger("virus_cleaner")
     logger.setLevel(level)
 
@@ -60,8 +66,8 @@ def setup_logging(level):
         handler.setLevel(logging.DEBUG)
         # create a logging format
         formatter = logging.Formatter(
-            '%(asctime)s - [%(levelname)7s][%(name)20s] // %(message)s',
-            datefmt='%H:%M:%S'
+            "%(levelname)7s - %(asctime)s [%(name)20s] // %(message)s",
+            datefmt="%H:%M:%S",
         )
         handler.setFormatter(formatter)
         # add the file handler to the logger
@@ -75,7 +81,7 @@ logger = setup_logging(logging.DEBUG)
 
 class ErrorHandler(object):
     """
-    Utility class to handles errors that can happen.
+    Utility class to handle errors that can happen.
     Errors are stored insided and can then be raised at the end of the process.
 
     Args:
@@ -104,15 +110,27 @@ class ErrorHandler(object):
         display_str = ""
 
         for error_id, error_data in self.data.items():
-            error_source = error_data[0].ljust(85, ' ')
+
+            error_source = error_data[0].ljust(85, " ")
             error_type = error_data[1].__class__.__name__
-            error_message = str(error_data[1]).replace('\n', '', -1)
+            error_message = str(error_data[1]).replace("\n", "", -1)
+
             display_str += "{} - <{}> {} // {} \n".format(
-                error_id, error_source, error_type, error_message)
+                error_id,
+                error_source,
+                error_type,
+                error_message,
+            )
 
         return display_str
 
     def log(self, context=None):
+        """
+        Send message to current logger with error level
+
+        Args:
+            context (str): string to represent the context it was executed from
+        """
 
         if not self.data:
             return
@@ -127,10 +145,13 @@ class ErrorHandler(object):
 
 
 class BaseVirusObject(ABC):
+    """
+    Base abstract class to represent an infected digital object in the scene or outside.
+    """
 
     @abstractproperty
     def identifier(self):
-        return
+        pass
 
     @abstractproperty
     def object_type(self):
@@ -146,8 +167,7 @@ class BaseVirusObject(ABC):
 
     def __str__(self):
         return "[{}] {} : <{}>".format(
-            self.__class__.__name__.ljust(18), self.object_type,
-            self.identifier
+            self.__class__.__name__.ljust(18), self.object_type, self.identifier
         )
 
     def __repr__(self):
@@ -155,8 +175,11 @@ class BaseVirusObject(ABC):
 
 
 class VirusNode(BaseVirusObject):
-    identifier = "to override"
+    """
+    Abstract class to represent an infected object in the maya scene.
+    """
 
+    identifier = NotImplemented
     object_type = "maya node"
 
     def __init__(self):
@@ -188,9 +211,14 @@ class VaccineGeneNode(VirusNode):
 
 
 class VirusFile(BaseVirusObject):
-    identifier = "to override"
-    "A file path."
+    """
+    Abstract class to represent an infected object outside the maya scene, in the file system.
+    """
 
+    identifier = NotImplemented
+    """
+    A file path.
+    """
     object_type = "file on disk"
 
     @property
@@ -211,47 +239,42 @@ class VirusFile(BaseVirusObject):
 
 class VaccineFilePy(VirusFile):
     identifier = os.path.join(
-        cmds.internalVar(userAppDir=True),
-        "scripts",
-        "vaccine.py"
+        cmds.internalVar(userAppDir=True), "scripts", "vaccine.py"
     )
 
 
 class VaccineFilePyc(VirusFile):
     identifier = os.path.join(
-        cmds.internalVar(userAppDir=True),
-        "scripts",
-        "vaccine.pyc"
+        cmds.internalVar(userAppDir=True), "scripts", "vaccine.pyc"
     )
 
 
 class UserSetupFilePy(VirusFile):
     identifier = os.path.join(
-        cmds.internalVar(userAppDir=True),
-        "scripts",
-        "userSetup.py"
+        cmds.internalVar(userAppDir=True), "scripts", "userSetup.py"
     )
 
 
 class UserSetupFilePyc(VirusFile):
     identifier = os.path.join(
-        cmds.internalVar(userAppDir=True),
-        "scripts",
-        "userSetup.pyc"
+        cmds.internalVar(userAppDir=True), "scripts", "userSetup.pyc"
     )
 
 
 class VirusScriptJobs(BaseVirusObject):
-    identifier = "scriptJobs running"
+    """
+    Represent an infected object in the maya scene, more specifically scripts jobs.
+    """
 
+    identifier = "scriptJobs running"  # not needed as overriden by jobs attribute
     object_type = "maya scriptJobs"
 
     def __init__(self):
         self.jobs = cmds.scriptJob(listJobs=True)
-        self.jobs = list(filter(
-            lambda job: "vaccine" in job or "leukocyte" in job,
-            self.jobs
-        ))
+        # keep only infected jobs
+        self.jobs = list(
+            filter(lambda job: "vaccine" in job or "leukocyte" in job, self.jobs)
+        )
         self.identifier = self.jobs
 
     @property
@@ -276,8 +299,11 @@ class VirusScriptJobs(BaseVirusObject):
 
 
 class VirusModule(BaseVirusObject):
-    identifier = "module vaccine"
+    """
+    Represent an infected object in the maya scene, loaded in the python interpreter.
+    """
 
+    identifier = "module vaccine"  # not needed as overriden by modules attribute
     object_type = "loaded python module"
 
     def __init__(self):
@@ -313,24 +339,28 @@ VIRUSOBJECTS = [
 ]
 """
 All BaseVirusObject subclasses representing a potential security flaw to delete.
-They are NOT instanced.
+They are NOT instanced yet.
 """
 
 
 def check_virus_exists():
     """
-    Return a list of BaseVirusObject that have been confirmed to exists.
+    Return a list of BaseVirusObject that have been confirmed to exist.
     If empty means no virus have been found.
 
     Returns:
         list of BaseVirusObject:
     """
+    # instance VirusObjects
     exists_list = list(map(lambda vo: vo(), VIRUSOBJECTS))
+    # keep only virus object that exist
     exists_list = list(filter(lambda vo: vo.exists, exists_list))
 
     # if only the UserSetup file exists but none of the other virus objects,
     # means there is no infection.
-    usersetupfiltered = list(map(lambda vo: isinstance(vo, (UserSetupFilePy, UserSetupFilePyc)), exists_list))
+    usersetupfiltered = list(
+        map(lambda vo: isinstance(vo, (UserSetupFilePy, UserSetupFilePyc)), exists_list)
+    )
     if all(usersetupfiltered):
         exists_list = list()
 
@@ -357,19 +387,23 @@ def delete_virus():
             errorh.add(virus, excp)
         continue
 
-    logger.debug(
-        "[delete_virus] Deleted {} virus objects.".format(len(virus_list))
-    )
+    logger.debug("[delete_virus] Deleted {} virus objects.".format(len(virus_list)))
     errorh.log()
     return
 
 
 class MainWindow:
+    """
+    Only interface window for the user to interact with the script.
+
+    Coded using native maya.cmds
+    """
+
     NAME = "VaccineVirusCleaner"
 
     def __init__(self):
 
-        # make sure we doesn't create 2 time the same window so delete it before
+        # make sure we don't create 2 time the same window so delete it before
         self._delete_if_exists()
 
         self.window = cmds.window(
@@ -401,8 +435,7 @@ class MainWindow:
             parent=self.NAME,
         )
         self.menuitem_save = cmds.menuItem(
-            label="Save Scene after Delete.",
-            checkBox=True
+            label="Save Scene after Delete.", checkBox=True
         )
 
         self.menu_about = cmds.menu(
@@ -411,11 +444,11 @@ class MainWindow:
         )
         cmds.menuItem(
             label="GitHub Repo",
-            command="webbrowser.open('https://github.com/MrLixm/Autodesk_Maya/tree/main/src/securityVirusCleaner')"
+            command="webbrowser.open('https://github.com/MrLixm/Autodesk_Maya/tree/main/src/securityVirusCleaner')",
         )
         cmds.menuItem(
             label="Security Recommendations",
-            command="webbrowser.open('https://discourse.techart.online/t/another-maya-malware-in-the-wild/12970')"
+            command="webbrowser.open('https://discourse.techart.online/t/another-maya-malware-in-the-wild/12970')",
         )
         return
 
@@ -434,46 +467,38 @@ class MainWindow:
         _msg = """
 <pre>Clean the "harmless" <em>vaccine.py</em> virus from this scene and your machine.</pre>
         """
-        cmds.text(
-            label=_msg,
-            al='left',
-            recomputeSize=True,
-            wordWrap=True
-        )
+        cmds.text(label=_msg, al="left", recomputeSize=True, wordWrap=True)
 
         # cmds.separator(height=0, style='none')
 
         cmds.rowColumnLayout(numberOfColumns=2, columnSpacing=[2, 5])
         self.icon_status = cmds.iconTextStaticLabel(
-            style="iconOnly",
-            backgroundColor=[0.5, 0.5, 0.5],
-            width=15
+            style="iconOnly", backgroundColor=[0.5, 0.5, 0.5], width=15
         )
-        self.txt_status = cmds.text(
-            label="Not analyzed yet"
-        )
-        cmds.setParent('..')
+        self.txt_status = cmds.text(label="Not analyzed yet")
+        cmds.setParent("..")
 
         self.layout_btns01 = cmds.columnLayout(adjustableColumn=True)
-        self.btn_cpizza = cmds.button(
-            label="Check", command=self.check_virus_exists, h=50,
-            bgc=(0.2, 0.2, 0.2)
+        self.btn_check = cmds.button(
+            label="Check", command=self.check_virus_exists, h=50, bgc=(0.2, 0.2, 0.2)
         )
-        self.btn_apineapple = cmds.button(
-            label="Check and Delete", command=self.delete_viruses, h=50,
-            bgc=(0.2, 0.2, 0.2)
+        self.btn_check_delete = cmds.button(
+            label="Check and Delete",
+            command=self.delete_viruses,
+            h=50,
+            bgc=(0.2, 0.2, 0.2),
         )
         # end the layout_btns01
-        cmds.setParent('..')
+        cmds.setParent("..")
 
         self.txt_results = cmds.scrollField(
             editable=False,
             height=150,
             backgroundColor=[0.23, 0.23, 0.23],
-            highlightColor=[0, 0, 0]
+            highlightColor=[0, 0, 0],
         )
         # end the layout_main
-        cmds.setParent('..')
+        cmds.setParent("..")
 
         return
 
@@ -522,8 +547,9 @@ class MainWindow:
         msg = "[check_virus_exists] No viruses found in scene."
         if viruses:
             self.set_status(True)
-            msg = "[check_virus_exists] Found {} problematic objects :\n" \
-                  "  ".format(len(viruses))
+            msg = "[check_virus_exists] Found {} problematic objects :\n" "  ".format(
+                len(viruses)
+            )
             msg += pprint.pformat(viruses, indent=2)[2::][:-1]
         else:
             self.set_status(False)
@@ -561,11 +587,13 @@ class MainWindow:
 
 
 def run_interface():
-    # launch the window when this script is executed
+    """
+    Create and display the window to user.
+    """
     mainwindow = MainWindow()
     mainwindow.show()
     return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_interface()
