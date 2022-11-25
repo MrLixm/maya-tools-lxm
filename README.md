@@ -41,6 +41,10 @@ maya scene and from your system.
     Useful to reset a maya window that might have gone off-screeen and is not
 visible anymore.
 
+- [`referenceExporter`](./src/referenceExporter)
+
+  Scripts to help exporting references nodes from a scene.
+
 
 ## Licensing
 
