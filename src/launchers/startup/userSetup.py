@@ -137,7 +137,6 @@ def set_pref_on_launch():
         logger.info("executed {}".format(user_prefs_file))
 
     cmds.optionVar(intValue=(pref_registered_variable, 1))
-    cmds.savePrefs()
 
     logger.info("finished. prefs saved.")
     return
