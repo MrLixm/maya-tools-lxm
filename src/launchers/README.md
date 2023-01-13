@@ -18,6 +18,24 @@ Execution diagram :
           # plugin autoloading
 ```
 
+## logic
+
+### plugins
+
+Loading of plugins is performed via a "hack". We fully override autoloading
+of plugins from the user preferences.
+
+The autoloading of plugins is stored in the `pluginPrefs.mel` file, located in the
+user preferences. At start-up we replace this file by a pre-defined one, which
+maya will read just fine.
+
+The only issue is if you don't have any user preferences yet, because it's the
+first time you are launching maya on your machine, or if it is the first time maya
+is launched for the given user preferences location. In that case the hack will not
+work on the first time, and you will need to restart maya righ after.
+(This is suggested to the user via a small dialog)
+
+
 ## structure
 
 ### `startup/`
