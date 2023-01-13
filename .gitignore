@@ -24,3 +24,6 @@ poetry.lock
 
 # log files
 *.log
+
+src/launchers/prefs/
+!/src/launchers/prefs/.gitkeep
