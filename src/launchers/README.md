@@ -18,6 +18,28 @@ Execution diagram :
           # plugin autoloading
 ```
 
+## how-to-use
+
+You launch maya by executing one of the `.sh` scripts.
+
+### executing shell scripts
+
+`.sh` is the extension for bash shell scripts. On Linux you can run them easily,
+but not directly on Windows. A quick Google search should inform you at how to achieve 
+that. 
+
+I developed them using [Git BASH](https://gitforwindows.org/) on Windows 10.
+
+
+## how-to-configure
+
+You can create new "env" depending on your needs. Just duplicate the `env-default`
+folder and edit it's content.
+
+You can then do the same for the `.sh` script. Duplicate the default and then
+edit its content, so it points to the env you just duplicated
+(just edit the `LXM_MAYA_ENV_DIR` environment variable).
+
 ## logic
 
 ### plugins
