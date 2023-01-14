@@ -258,7 +258,7 @@ class PathInputDemoWindow:
 
         if not os.path.exists(maya_file_path):
             raise FileNotFoundError(
-                f"Maya file path doesn't exists on disk: {maya_file_path}"
+                "Maya file path doesn't exists on disk: {}".format(maya_file_path)
             )
 
         root_substitute = cmds.textField(self.textfield_new_root, query=True, text=True)
@@ -268,7 +268,7 @@ class PathInputDemoWindow:
 
         if not os.path.exists(root_substitute):
             raise FileNotFoundError(
-                f"Root directory path doesn't exists on disk: {root_substitute}"
+                "Root directory path doesn't exists on disk: {}".format(root_substitute)
             )
 
         logger.info(
