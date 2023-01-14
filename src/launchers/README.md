@@ -20,7 +20,8 @@ Execution diagram :
 
 ## how-to-use
 
-You launch maya by executing one of the `.sh` scripts.
+You launch maya by executing one of the `.sh` scripts or its `.bat` variant
+for Windows.
 
 ### executing shell scripts
 
