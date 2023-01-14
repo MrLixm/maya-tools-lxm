@@ -85,7 +85,7 @@ def get_maya_file_to_process(root_path) -> list[Path]:
     """
     Parse the given directopry and all its subdirectories for maya files.
     """
-    logger.info(f"Started with {root_path=}")
+    logger.info(f"Started with root_path={root_path}")
 
     maya_file_list = get_child_files_from_root(
         root_path=root_path,
@@ -161,7 +161,7 @@ def process_file(
     if "VIRTUAL_ENV" in process_env:
         del process_env["VIRTUAL_ENV"]
 
-    logger.debug(f"<{log_prefix}> {process_command=}")
+    logger.debug(f"<{log_prefix}> process_command={process_command}")
     logger.info(f"<{log_prefix}> About to be processed  ...")
 
     if DRYRUN:

@@ -59,7 +59,7 @@ def repath_reference(node_name, common_denominator: Path, root_substitute: Path)
         raise ValueError(f"Cannot retrieve reference file path on {node_name}")
 
     current_path = Path(current_path)
-    logger.info(f"{current_path=}")
+    logger.info(f"current_path={current_path}")
 
     new_path = (
         root_substitute / str(current_path).split(str(common_denominator))[-1][1::]
@@ -72,7 +72,7 @@ def repath_reference(node_name, common_denominator: Path, root_substitute: Path)
         logger.info(f"Returning earlier, path is already good on <{node_name}>")
         return
 
-    logger.info(f"{new_path=}")
+    logger.info(f"new_path{new_path}")
 
     logger.info(f"Repathing <{node_name}> ...")
     try:
