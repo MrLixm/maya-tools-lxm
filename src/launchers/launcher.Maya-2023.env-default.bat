@@ -1,10 +1,12 @@
 :: Launcher for Maya on Windows
 :: Barebone variant for fast startup time.
-echo "started %0"
-echo "cwd=%~dp0"
+@echo off
+echo started %0
+echo cwd=%~dp0
 
 set U_MAYA_VERSION=2023
 set "U_MAYA_HOME=C:\Program Files\Autodesk\Maya%U_MAYA_VERSION%"
+set "U_MAYA_EXE=%U_MAYA_HOME%\bin\maya.exe"
 
 set "PYTHONPATH=%~dp0startup"
 set "MAYA_APP_DIR=%~dp0prefs"
@@ -15,7 +17,7 @@ set LXM_MAYA_ALWAYS_OVERRIDE_PREFS=1
 
 :: =============================================================================
 :: region PERFORMANCES IMPROVEMENTS
-
+echo Applying performances improvements ...
 set MAYA_DISABLE_LOOKDEV_MATERIAL_VIEWER=1
 
 :: https://www.regnareb.com/pro/2015/06/viewport-2-0-and-performances/
@@ -32,7 +34,8 @@ set MAYA_DISABLE_ADP=1
 :: export MAYA_DISABLE_VP2_WHEN_POSSIBLE=1
 :: endregion
 
-start "" "%U_MAYA_HOME%\bin\maya.exe"
+echo Starting %U_MAYA_EXE% ...
+start "" "%U_MAYA_EXE%"
 
 echo Launcher finished, press any to escape.
 pause >nul
