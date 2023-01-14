@@ -1,5 +1,5 @@
 """
-version=3
+version=4
 author="Liam Collod<monsieurlixm@gmail.com>"
 dependencies=[
     "python>2.7",
@@ -26,41 +26,78 @@ license=\"\"\"
     limitations under the License.
 \"\"\"
 """
+import logging
 
 import maya.cmds as cmds
+
+
+logger = logging.getLogger("pizza_creator")
+
 
 """ ---------------------------------------------------------------------------
 
 API
 
-Where you have all your functions that interact with your scene
+Where you have all your functions that interact with your scene. 
+They must be indepent from the interface.
 
 """
 
-# to store all the pizza created by the user
-PIZZA_DATABASE = []
+
+PIZZA_DATABASE = {}
+"""
+To store all the pizza created by the user with their property.
+
+Pizzas are stored as ::
+
+    { pizzaName: { "hasPineapple": bool }, ... }
+"""
 
 
 def create_pizza(name):
     """
-    Add teh given pizza to the database
+    Add the given pizza to the database
 
     Args:
         name(str):
     """
-    PIZZA_DATABASE.append(name)
-    print("Pizza {} created".format(name))
+    PIZZA_DATABASE[name] = {}
+    logger.info("Pizza <{}> created".format(name))
     return
 
 
-def add_pineapple():
+def set_has_pineapple(pizza_name, has_pineapple):
     """
     Add pineapple on the latest pizza created.
+
+    Args:
+        pizza_name(str): name of the pizza on which to add pineapple.
+        has_pineapple(bool): True to mention the pizza has pineapple.
+
+    Raises:
+        ValueError: if the given pizza_name was never creatd yet.
     """
-    # we get the last pizza added to the databse
-    last_pizza = PIZZA_DATABASE[-1]
-    print("Pineapple added on pizza {}".format(last_pizza))
+    pizza = PIZZA_DATABASE.get(pizza_name)
+    if pizza is None:
+        raise ValueError("Pizza {} was not created.".format(pizza_name))
+
+    # pizza should already be a dict, as set in create_pizza()
+    pizza["hasPineapple"] = has_pineapple
+
+    logger.info("Pizza <{}> set pineapple to {}".format(pizza_name, has_pineapple))
     return
+
+
+def get_has_pineapple(pizza_name):
+    """
+
+    Args:
+        pizza_name:
+
+    Returns:
+        bool: True if the pizza has pineapple
+    """
+    return PIZZA_DATABASE.get(pizza_name, {}).get("hasPineapple", False)
 
 
 """ ---------------------------------------------------------------------------
@@ -83,49 +120,89 @@ class PizzaCreatorWindow:
         self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(400, 400))
 
         self.build()
+        self.update_pineapple_button()
 
     def build(self):
         """
         We build all the interface elements in this method.
         """
 
-        self.layout_main = cmds.rowColumnLayout(adjustableColumn=True)
+        # this layout will only have one column, that cna extend
+        self.layout_main = cmds.rowColumnLayout(adjustableColumn=1)
         cmds.text(
-            label="Welcome to the pizza creator",
-            h=20,
-            w=500,
-            bgc=(0.204, 0.204, 0.21),
-            al="left",
-            fn="tinyBoldLabelFont",
-            rs=False,
+            label='<h1 style="color: #C97B30;">Welcome to the pizza creator<h1>',
+            bgc=(255 / 255, 218 / 255, 102 / 255),
+            align="left",
+            font="boldLabelFont",
+            recomputeSize=True,
+            height=40,
         )
         cmds.separator(height=10, style="none")
-        cmds.text(label="Pizza Name:", al="left", h=25)
-        self.txtf_pizza_name = cmds.textField(h=20, w=280, ann="Name of the Pizza")
-        cmds.separator(height=10, style="none")
 
-        self.layout_btns01 = cmds.rowColumnLayout(numberOfColumns=2)
-        self.btn_cpizza = cmds.button(
+        self.layout_create = cmds.rowColumnLayout(numberOfColumns=3)
+        cmds.rowColumnLayout(self.layout_create, edit=True, adjustableColumn=2)
+        cmds.rowColumnLayout(self.layout_create, edit=True, columnSpacing=[1, 10])
+        cmds.rowColumnLayout(self.layout_create, edit=True, columnSpacing=[2, 10])
+        cmds.rowColumnLayout(self.layout_create, edit=True, columnSpacing=[3, 10])
+        cmds.text(label="Pizza Name", align="left")
+        self.textfield_pizza_name = cmds.textField(annotation="Name of the Pizza")
+        self.button_create_pizza = cmds.button(
             label="Create Pizza",
             command=self.create_pizza,
-            h=50,
-            w=150,
             bgc=(0.2, 0.2, 0.2),
         )
-        self.btn_apineapple = cmds.button(
+        # end layout_create
+        cmds.setParent("..")
+
+        cmds.separator(height=10, style="none")  # (belongs to layout_main)
+
+        self.layout_list_pizza = cmds.rowColumnLayout(numberOfColumns=1)
+        cmds.rowColumnLayout(self.layout_list_pizza, edit=True, adjustableColumn=1)
+        cmds.text(label="Pizza List", align="center")
+        cmds.separator(height=5, style="none")
+        # list is created empty at the beginning !
+        self.textlist_pizza = cmds.textScrollList(
+            allowMultiSelection=False,
+            # this creates a callback. The function is called when we change selection
+            selectCommand=self.update_pineapple_button,
+            height=200,
+        )
+        cmds.separator(height=10, style="none")
+        self.button_add_pineapple = cmds.button(
             label="Add Pineapple",
-            command=self.add_pineapple,
-            h=50,
-            w=150,
+            command=self.add_pineapple_to_selected,
             bgc=(0.2, 0.2, 0.2),
         )
-        # end the layout_btns01
+        self.button_remove_pineapple = cmds.button(
+            label="Remove Pineapple",
+            command=self.remove_pineapple_to_selected,
+            bgc=(0.2, 0.2, 0.2),
+        )
+
+        # end layout_list_pizza
         cmds.setParent("..")
 
-        # end the layout_main
+        # end layout_main
         cmds.setParent("..")
-
         return
+
+    def get_selected_pizza(self):
+        """
+        Get the name of the currently selected pizza in the list widget.
+
+        Returns:
+            str|None: name of the selected pizza or None
+        """
+        selected_pizza = cmds.textScrollList(
+            self.textlist_pizza,
+            query=True,
+            selectItem=True,
+        )
+        if not selected_pizza:
+            return None
+
+        selected_pizza = selected_pizza[0]
+        return selected_pizza
 
     def create_pizza(self, *args):
         """
@@ -133,7 +210,7 @@ class PizzaCreatorWindow:
          it passes an argument we don't need.
         """
         # first we want to get the name of the pizza entered by the user
-        pizza_name = cmds.textField(self.txtf_pizza_name, query=True, text=True)
+        pizza_name = cmds.textField(self.textfield_pizza_name, query=True, text=True)
 
         # if the user didn't fill the field we can raise an error message
         if not pizza_name:
@@ -148,20 +225,87 @@ class PizzaCreatorWindow:
                 dismissString="Ok",
             )
             # we leave the method by calling return as we don't want to continue
-            print("[create_pizza] pizza not created: " "the user didn't gave it a name")
+            logger.warning(
+                "[create_pizza] pizza not created: " "the user didn't gave it a name"
+            )
             return
 
         # we call the function defined in the API section above, passing the pizza_name
         create_pizza(name=pizza_name)
-        # we colour the button add pineapple in yellow
-        cmds.button(self.btn_apineapple, edit=True, bgc=(0.8, 0.6, 0.1))
+
+        # as we modified the pizza database, we need to refresh the pizza list
+        self.update_pizza_list()
         return
 
-    def add_pineapple(self, *args):
-        # we call the function defined in the API section above
-        add_pineapple()
-        # we colour the button add pineapple to its original colour
-        cmds.button(self.btn_apineapple, edit=True, bgc=(0.2, 0.2, 0.2))
+    def add_pineapple_to_selected(self, *args):
+
+        selected_pizza = self.get_selected_pizza()
+        if not selected_pizza:
+            return
+
+        set_has_pineapple(selected_pizza, True)
+
+        # we need to trigger an update of the buttons interface, but we don't need
+        # to refresh the whole list
+        self.update_pineapple_button()
+        return
+
+    def remove_pineapple_to_selected(self, *args):
+
+        selected_pizza = self.get_selected_pizza()
+        if not selected_pizza:
+            return
+
+        set_has_pineapple(selected_pizza, False)
+
+        # we need to trigger an update of the buttons interface, but we don't need
+        # to refresh the whole list
+        self.update_pineapple_button()
+        return
+
+    def update_pizza_list(self, *args):
+        """
+        Refresh the widget displaying all the pizza stored.
+        """
+
+        pizza_name_list = list(PIZZA_DATABASE.keys())
+
+        # we store the name of the currently selected item, so we can restore it later
+        selected_item = self.get_selected_pizza()
+
+        # we remove all items, so we don't add duplicates !
+        cmds.textScrollList(self.textlist_pizza, edit=True, removeAll=True)
+        # add all the items
+        cmds.textScrollList(self.textlist_pizza, edit=True, append=pizza_name_list)
+        # and now we can select back the previously selected item
+        # if it doesn't exist anymore, just nothing will happen
+        if selected_item:
+            cmds.textScrollList(
+                self.textlist_pizza,
+                edit=True,
+                selectItem=selected_item,
+            )
+        return
+
+    def update_pineapple_button(self, *args):
+        """
+        Update the visibility of the add/remove pineapple buttons depending on the selected item.
+        """
+
+        selected_pizza = self.get_selected_pizza()
+        if selected_pizza:
+            has_pineapple = get_has_pineapple(selected_pizza)
+        else:
+            has_pineapple = False
+
+        # this whole condition can be "optimized" in 2 lines ;)
+        if has_pineapple:
+            cmds.button(self.button_add_pineapple, edit=True, enable=False)
+            cmds.button(self.button_remove_pineapple, edit=True, enable=True)
+        else:
+            cmds.button(self.button_add_pineapple, edit=True, enable=True)
+            cmds.button(self.button_remove_pineapple, edit=True, enable=False)
+
         return
 
     def delete_if_exists(self):
