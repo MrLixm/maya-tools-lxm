@@ -186,7 +186,7 @@ class RefRepathWindow:
     def __init__(self):
 
         self.delete_if_exists()
-        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(800, 200))
+        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(800, 300))
         self.build()
 
     def build(self):
@@ -199,7 +199,12 @@ class RefRepathWindow:
             width_button = 80
             margin_widget_base = 10
 
-        self.layout_main = cmds.rowColumnLayout(adjustableColumn=1)
+        self.layout_main = cmds.frameLayout(
+            collapsable=False,
+            labelVisible=False,
+            marginWidth=10,
+            marginHeight=10,
+        )
         cmds.separator(height=10, style="none")
         cmds.text(
             label="<h1>Utility to repath references.</h1>",
@@ -209,8 +214,8 @@ class RefRepathWindow:
         cmds.separator(height=20, style="none")
         cmds.text(
             label=(
-                "The given Maya file will be opened, all references will be repath."
-                "You the decide how to save it."
+                "The given Maya file will be opened, all references will be repath. "
+                "You then decide how to save it."
             ),
             align="center",
             recomputeSize=True,
