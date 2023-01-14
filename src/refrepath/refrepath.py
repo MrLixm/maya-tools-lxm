@@ -60,14 +60,21 @@ def repath_reference(node_name, common_denominator: Path, root_substitute: Path)
 
     current_path = Path(current_path)
     logger.info(f"{current_path=}")
+
     new_path = (
         root_substitute / str(current_path).split(str(common_denominator))[-1][1::]
     )
-    logger.info(f"{new_path=}")
+
     if not new_path.exists():
         raise FileNotFoundError(f"New path computed doesn't exists on disk: {new_path}")
 
-    logger.info("Repathing {} ...".format(node_name))
+    if current_path == new_path:
+        logger.info(f"Returning earlier, path is already good on <{node_name}>")
+        return
+
+    logger.info(f"{new_path=}")
+
+    logger.info(f"Repathing <{node_name}> ...")
     try:
         cmds.file(new_path, loadReference=node_name)
     except Exception as excp:
