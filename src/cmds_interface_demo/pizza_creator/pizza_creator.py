@@ -117,7 +117,7 @@ class PizzaCreatorWindow:
         # make sure we don't create 2 time the same window so delete it before
         self.delete_if_exists()
 
-        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(400, 400))
+        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(400, 500))
 
         self.build()
         self.update_pineapple_button()
@@ -128,14 +128,19 @@ class PizzaCreatorWindow:
         """
 
         # this layout will only have one column, that cna extend
-        self.layout_main = cmds.rowColumnLayout(adjustableColumn=1)
+        self.layout_main = cmds.frameLayout(
+            collapsable=False,
+            labelVisible=False,
+            marginWidth=10,
+            marginHeight=10,
+        )
         cmds.text(
             label='<h1 style="color: #C97B30;">Welcome to the pizza creator<h1>',
             bgc=(255 / 255, 218 / 255, 102 / 255),
-            align="left",
+            align="center",
             font="boldLabelFont",
-            recomputeSize=True,
-            height=40,
+            recomputeSize=False,
+            height=20,
         )
         cmds.separator(height=10, style="none")
 

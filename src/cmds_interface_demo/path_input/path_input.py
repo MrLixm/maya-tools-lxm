@@ -87,7 +87,7 @@ class PathInputDemoWindow:
     def __init__(self):
 
         self.delete_if_exists()
-        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(800, 200))
+        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(800, 300))
         self.build()
 
     def build(self):
@@ -100,8 +100,12 @@ class PathInputDemoWindow:
             width_button = 80
             margin_widget_base = 10
 
-        self.layout_main = cmds.rowColumnLayout(adjustableColumn=1)
-        cmds.separator(height=10, style="none")
+        self.layout_main = cmds.frameLayout(
+            collapsable=False,
+            labelVisible=False,
+            marginWidth=10,
+            marginHeight=10,
+        )
         cmds.text(
             label="<h1>Path Input</h1>",
             align="center",
