@@ -9,6 +9,10 @@ Else a README.md should be supplied.
 
 ## What's Inside
 
+- [`launchers`](./src/launchers)
+
+   Scripts to start Maya with an optimized environment.
+
 - [`cmds_interface_demo`](./src/cmds_interface_demo)
 
     A script to demonstrate how you can use `cmds` to create a quick interface in Maya.
