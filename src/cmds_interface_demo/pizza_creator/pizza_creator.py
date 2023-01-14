@@ -25,7 +25,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
 """
 
 import maya.cmds as cmds
@@ -72,13 +71,13 @@ Interface
 """
 
 
-class MyWindow:
+class PizzaCreatorWindow:
 
     NAME = "PizzaCreator"
 
     def __init__(self):
 
-        # make sure we doesn't create 2 time the same window so delete it before
+        # make sure we don't create 2 time the same window so delete it before
         self.delete_if_exists()
 
         self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(400, 400))
@@ -131,12 +130,12 @@ class MyWindow:
     def create_pizza(self, *args):
         """
         Here the *args is just because when the button call this method,
-         it pass an argument we don't need.
+         it passes an argument we don't need.
         """
         # first we want to get the name of the pizza entered by the user
         pizza_name = cmds.textField(self.txtf_pizza_name, query=True, text=True)
 
-        # if the user didn't filled the field we can raise an error message
+        # if the user didn't fill the field we can raise an error message
         if not pizza_name:
             # display a dialog to the user
             cmds.confirmDialog(
@@ -180,6 +179,16 @@ class MyWindow:
         return
 
 
-# launch the window when this script is executed
-mywindow = MyWindow()
-mywindow.show()
+def gui():
+    """
+    Create and show the interface to the user
+    """
+
+    mywindow = PizzaCreatorWindow()
+    mywindow.show()
+
+    return
+
+
+if __name__ == "__main__":
+    gui()
