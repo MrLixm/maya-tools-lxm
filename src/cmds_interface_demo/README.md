@@ -15,4 +15,6 @@ Store data "outside" of the interface and edit it form the interface.
 
 Common use case where you have to get input of paths from the user.
 
+A bit more complex than the pizza_creator.
+
 ![gif of interactions with the interface in maya](path_input/path_input.gif)
