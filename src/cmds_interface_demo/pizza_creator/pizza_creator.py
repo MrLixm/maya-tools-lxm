@@ -81,11 +81,7 @@ class MyWindow:
         # make sure we doesn't create 2 time the same window so delete it before
         self.delete_if_exists()
 
-        self.window = cmds.window(
-            self.NAME,
-            title=self.NAME,
-            widthHeight=(400, 400)
-        )
+        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(400, 400))
 
         self.build()
 
@@ -96,31 +92,39 @@ class MyWindow:
 
         self.layout_main = cmds.rowColumnLayout(adjustableColumn=True)
         cmds.text(
-            label="Welcome to the pizza creator", h=20, w=500,
-            bgc=(0.204, 0.204, 0.21), al='left', fn='tinyBoldLabelFont',
-            rs=False
+            label="Welcome to the pizza creator",
+            h=20,
+            w=500,
+            bgc=(0.204, 0.204, 0.21),
+            al="left",
+            fn="tinyBoldLabelFont",
+            rs=False,
         )
-        cmds.separator(height=10, style='none')
+        cmds.separator(height=10, style="none")
         cmds.text(label="Pizza Name:", al="left", h=25)
-        self.txtf_pizza_name = cmds.textField(
-            h=20, w=280, ann="Name of the Pizza"
-        )
-        cmds.separator(height=10, style='none')
+        self.txtf_pizza_name = cmds.textField(h=20, w=280, ann="Name of the Pizza")
+        cmds.separator(height=10, style="none")
 
         self.layout_btns01 = cmds.rowColumnLayout(numberOfColumns=2)
         self.btn_cpizza = cmds.button(
-            label='Create Pizza', command=self.create_pizza, h=50, w=150,
-            bgc=(0.2, 0.2, 0.2)
+            label="Create Pizza",
+            command=self.create_pizza,
+            h=50,
+            w=150,
+            bgc=(0.2, 0.2, 0.2),
         )
         self.btn_apineapple = cmds.button(
-            label='Add Pineapple', command=self.add_pineapple, h=50, w=150,
-            bgc=(0.2, 0.2, 0.2)
+            label="Add Pineapple",
+            command=self.add_pineapple,
+            h=50,
+            w=150,
+            bgc=(0.2, 0.2, 0.2),
         )
         # end the layout_btns01
-        cmds.setParent('..')
+        cmds.setParent("..")
 
         # end the layout_main
-        cmds.setParent('..')
+        cmds.setParent("..")
 
         return
 
@@ -130,29 +134,22 @@ class MyWindow:
          it pass an argument we don't need.
         """
         # first we want to get the name of the pizza entered by the user
-        pizza_name = cmds.textField(
-            self.txtf_pizza_name,
-            query=True,
-            text=True
-        )
+        pizza_name = cmds.textField(self.txtf_pizza_name, query=True, text=True)
 
         # if the user didn't filled the field we can raise an error message
         if not pizza_name:
             # display a dialog to the user
             cmds.confirmDialog(
-                title='Error',
+                title="Error",
                 icon="warning",
                 message="You didn't gave a name to your pizza !",
-                button=['Ok'],
-                defaultButton='Ok',
-                cancelButton='Ok',
-                dismissString='Ok'
+                button=["Ok"],
+                defaultButton="Ok",
+                cancelButton="Ok",
+                dismissString="Ok",
             )
             # we leave the method by calling return as we don't want to continue
-            print(
-                "[create_pizza] pizza not created: "
-                "the user didn't gave it a name"
-            )
+            print("[create_pizza] pizza not created: " "the user didn't gave it a name")
             return
 
         # we call the function defined in the API section above, passing the pizza_name
