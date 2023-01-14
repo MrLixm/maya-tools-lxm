@@ -103,6 +103,7 @@ def open_and_repath_references(
     maya_file_path: Path,
     common_denominator: Path,
     root_substitute: Path,
+    save_scene: bool = True,
 ):
     """
     Open the given maya file and repath all the references inside.
@@ -113,6 +114,8 @@ def open_and_repath_references(
             part of the paths common between initial reference's path and the new root_substitute one.
         root_substitute:
             new "prefix" part of the path to use
+        save_scene:
+            True to save and increment the scen eonce finished
     """
 
     logger.info(f"Opening <{maya_file_path}> ...")
@@ -137,6 +140,7 @@ def open_and_repath_references(
             root_substitute=root_substitute,
         )
 
-    save_scene_increment()
+    if save_scene:
+        save_scene_increment()
     logger.info(f"Finished.")
     return
