@@ -42,6 +42,41 @@ REFREPATH_PACKAGE = Path(__file__).parent
 DRYRUN = False
 
 
+def override_maya_logging():
+    """
+    Override default maya python logger with a better formatter
+    """
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="{levelname: <7} | {asctime} [{name}][{funcName}] {message}",
+        style="{",
+        force=True,
+    )
+    return
+
+
+def save_scene_increment():
+    """
+    Save the current scene on disk with an increment in its filename.
+
+    To execute from a maya context.
+    """
+    from maya import cmds
+
+    current_scene_path = Path(cmds.file(query=True, sceneName=True))
+
+    increment = 1
+    new_scene_path = Path(current_scene_path)
+    while new_scene_path.exists():
+        new_scene_name = current_scene_path.stem + "." + f"{increment}".zfill(4)
+        new_scene_path = current_scene_path.with_stem(new_scene_name)
+
+    cmds.file(rename=new_scene_path)
+    logger.info("Saving {} ...".format(new_scene_path))
+    cmds.file(save=True)
+    return
+
+
 def get_child_files_from_root(
     root_path: Path,
     recursive: bool = True,
@@ -128,14 +163,16 @@ def process_file(
     maya_python_command = (
         "import maya.mel;"
         "import refrepath;"
+        "import refrepath_batch;"
         "from pathlib import Path;"
         "maya.mel.eval('stackTrace -state on');"
-        "refrepath.override_maya_logging();"
+        "refrepath_batch.override_maya_logging();"
         "refrepath.open_and_repath_references("
         f"    maya_file_path=Path(r'{maya_file}'),"
         f"    common_denominator=Path(r'{common_denominator}'),"
         f"    root_substitute=Path(r'{root_substitute}'),"
         ");"
+        "refrepath_batch.save_scene_increment();"
     )
     maya_python_command = repr(maya_python_command).lstrip('"').rstrip('"')
 
