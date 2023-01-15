@@ -22,6 +22,7 @@ import argparse
 import datetime
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -63,13 +64,26 @@ def save_scene_increment():
     """
     from maya import cmds
 
+    # number of zero for padding
+    zfill = 4
+
     current_scene_path = Path(cmds.file(query=True, sceneName=True))
 
     increment = 1
+    existing_increment = re.search(rf"\.\d{{{zfill}}}$", current_scene_path.stem)
     new_scene_path = Path(current_scene_path)
-    while new_scene_path.exists():
-        new_scene_name = current_scene_path.stem + "." + f"{increment}".zfill(4)
+
+    while new_scene_path.exists() or increment == 1:
+
+        increment_less_path = current_scene_path.stem
+        if existing_increment:
+            increment_less_path = increment_less_path.replace(
+                existing_increment.group(0), ""
+            )
+
+        new_scene_name = increment_less_path + "." + f"{increment}".zfill(zfill)
         new_scene_path = current_scene_path.with_stem(new_scene_name)
+        increment += 1
 
     cmds.file(rename=new_scene_path)
     logger.info("Saving {} ...".format(new_scene_path))
