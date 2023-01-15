@@ -110,7 +110,13 @@ def open_and_repath_references(
     logger.info(f"Opening <{maya_file_path}> ...")
     try:
         # still trigger warning but doesn't load references
-        cmds.file(maya_file_path, open=True, force=True, loadReferenceDepth="none")
+        cmds.file(
+            maya_file_path,
+            open=True,
+            force=True,
+            loadReferenceDepth="none",
+            prompt=False,
+        )
     except Exception as excp:
         logger.error(f"{excp}")
 
@@ -185,6 +191,12 @@ def gui():
             self.layout = QtWidgets.QVBoxLayout()
             self.label_title = QtWidgets.QLabel("<h1>Repathing Finished</h1>")
             self.label_description = QtWidgets.QLabel()
+            self.label_info = QtWidgets.QLabel(
+                "All references are currently unloaded and need to be reloaded if you "
+                "want to work on the scene.\n"
+                "You can also just save and close the scene, references will be "
+                "loaded the next time you open it."
+            )
             self.treewidget = QtWidgets.QTreeWidget()
             self.button_box = QtWidgets.QDialogButtonBox()
 
@@ -192,6 +204,7 @@ def gui():
             self.setLayout(self.layout)
             self.layout.addWidget(self.label_title)
             self.layout.addWidget(self.label_description)
+            self.layout.addWidget(self.label_info)
             self.layout.addWidget(self.treewidget)
             self.layout.addWidget(self.button_box)
 

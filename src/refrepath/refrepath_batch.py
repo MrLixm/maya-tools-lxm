@@ -266,7 +266,7 @@ def process_all_maya_files_from(root_path: Path):
             logs_path=log_path,
         )
 
-        logger.info(f"{file_index+1}/{len(maya_file_list)}")
+        logger.info(f"{file_index+1}/{len(maya_file_list)} completed.")
         continue
 
     logger.info("Finished.")
