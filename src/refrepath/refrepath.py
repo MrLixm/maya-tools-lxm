@@ -55,13 +55,13 @@ def repath_reference(
         logger.info(f"Returning earlier, path is already good on <{node_name}>")
         return current_path, new_path
 
-    logger.info(f"new_path{new_path}")
+    logger.info(f"new_path={new_path}")
 
     logger.info(f"Repathing <{node_name}> ...")
     # a reference repath can fail because of unkown node, we usually want to ignore that
     # so that's why we just log the error and still consider the repathing sucessful.
     try:
-        cmds.file(str(new_path), loadReference=node_name)
+        cmds.file(str(new_path), loadReference=node_name, loadReferenceDepth="none")
     except Exception as excp:
         logger.error(f"{excp}")
 
