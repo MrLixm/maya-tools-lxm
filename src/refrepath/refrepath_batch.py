@@ -43,6 +43,37 @@ REFREPATH_PACKAGE = Path(__file__).parent
 DRYRUN = False
 
 
+def configure_logging(root_path: Path, level: int):
+    """
+    Configure the python logging system for the processing of the given directory.
+
+    Args:
+        root_path: path to an existing directory
+        level: logging level to set the console logger to
+    """
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "{levelname: <7} | {asctime} [{name}][{funcName}] {message}", style="{"
+    )
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(level)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    if DRYRUN:
+        return
+
+    disk_handler_filename = (
+        f"refrepath-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+    )
+    disk_handler = logging.FileHandler(root_path / disk_handler_filename)
+    disk_handler.setLevel(logging.DEBUG)
+    disk_handler.setFormatter(formatter)
+    logger.addHandler(disk_handler)
+    return
+
+
 def override_maya_logging():
     """
     Override default maya python logger with a better formatter
@@ -237,19 +268,23 @@ def process_file(
     return
 
 
-def process_all_maya_files_from(root_path: Path):
+def process_all_maya_files_from(parse_root_path: Path, root_substitute_path: Path):
     """
     Parse the given directory to find all maya file and repath all references inside them.
 
     Args:
-        root_path: initial directory to parse recursively for maya files.
+        parse_root_path: initial directory to parse recursively for maya files.
+        root_substitute_path: directory path used as root for reference repathing.
     """
 
-    logger.info("Started.")
+    logger.info(
+        f"Started with parse_root_path={parse_root_path}, "
+        f"root_substitute_path={root_substitute_path}"
+    )
 
-    common_denominator = Path(root_path.name)
+    common_denominator = Path(root_substitute_path.name)
 
-    maya_file_list = get_maya_file_to_process(root_path)
+    maya_file_list = get_maya_file_to_process(parse_root_path)
     logger.info(f"About to process {len(maya_file_list)} files.")
 
     for file_index, maya_file in enumerate(maya_file_list):
@@ -262,7 +297,7 @@ def process_all_maya_files_from(root_path: Path):
         process_file(
             maya_file,
             common_denominator=common_denominator,
-            root_substitute=root_path,
+            root_substitute=root_substitute_path,
             logs_path=log_path,
         )
 
@@ -270,37 +305,6 @@ def process_all_maya_files_from(root_path: Path):
         continue
 
     logger.info("Finished.")
-    return
-
-
-def configure_logging(root_path: Path, level: int):
-    """
-    Configure the python logging system for the processing of the given directory.
-
-    Args:
-        root_path: path to an existing directory
-        level: logging level to set the console logger to
-    """
-    logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        "{levelname: <7} | {asctime} [{name}][{funcName}] {message}", style="{"
-    )
-
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(level)
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    if DRYRUN:
-        return
-
-    disk_handler_filename = (
-        f"refrepath-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
-    )
-    disk_handler = logging.FileHandler(root_path / disk_handler_filename)
-    disk_handler.setLevel(logging.DEBUG)
-    disk_handler.setFormatter(formatter)
-    logger.addHandler(disk_handler)
     return
 
 
@@ -329,22 +333,43 @@ def cli():
         help="Do not actually launch Maya and don't write any file to disk.",
     )
     parser.add_argument(
-        "root_path",
-        help="Path to an existing disk to parse maya files from.",
+        "parse_root_path",
+        help=(
+            "Path to an existing disk to parse maya files from. If no other argument is "
+            "specified, this will also be used as the new root directory for references repathing."
+        ),
         type=str,
+    )
+    parser.add_argument(
+        "--substitute_root_path",
+        help="Directory path used as root for reference repathing.",
+        type=str,
+        default=None,
     )
     parsed = parser.parse_args()
 
     if parsed.dry_run:
         DRYRUN = True
 
-    root_path = Path(parsed.root_path)
-    if not root_path.exists():
-        raise FileNotFoundError(f"Given root_path doesn't exist on disk: {root_path}")
+    parse_root_path = Path(parsed.parse_root_path)
+    if not parse_root_path.exists():
+        raise FileNotFoundError(
+            f"Given root_path doesn't exist on disk: {parse_root_path}"
+        )
+
+    substitute_root_path = parsed.substitute_root_path
+    if not substitute_root_path:
+        substitute_root_path = parse_root_path
+    else:
+        substitute_root_path = Path(substitute_root_path)
+    if not substitute_root_path.exists():
+        raise FileNotFoundError(
+            f"Given substitute_root_path doesn't exist on disk: {substitute_root_path}"
+        )
 
     logging_level = logging.DEBUG if parsed.debug else logging.INFO
-    configure_logging(root_path, logging_level)
-    process_all_maya_files_from(root_path)
+    configure_logging(parse_root_path, logging_level)
+    process_all_maya_files_from(parse_root_path, substitute_root_path)
 
 
 if __name__ == "__main__":
