@@ -2,6 +2,27 @@
 
 Custom scripts to launch Maya with a specific configuration.
 
+## Introduction
+
+### What does it mean ? 
+
+That you don't launch Maya using the default Windows shortcut, or by clicking
+on a Maya file. You do it via a custom launcher.
+
+### What is the advantage ?
+
+You can configure maya exactly how you want it for a specific session.
+You want Arnold in one session and Redshift in another, you can just create 
+2 launchers to have 2 different Maya configurations.
+
+### How does it work ?
+
+Usually it's just setting environment variables. To know which one to edit is
+usually specified in the documentation.
+
+In that repository, we also execute some python code at startup to configure
+even more Maya.
+
 Execution diagram :
 
 ```shell
