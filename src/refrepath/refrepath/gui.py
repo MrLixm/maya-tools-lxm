@@ -9,8 +9,9 @@ from PySide2 import QtWidgets
 from PySide2 import QtCore
 from maya import cmds
 
-from .core import RepathedReference
-from .core import open_and_repath_references
+import refrepath
+from refrepath.core import RepathedReference
+from refrepath.core import open_and_repath_references
 
 logger = logging.getLogger(__name__)
 
@@ -115,14 +116,14 @@ class RefRepathWidget(QtWidgets.QDialog):
         self.setWindowTitle("RefRepath")
         self.setObjectName(self.NAME)
         self.cookUI()
-        self.bakeUI()
 
     def cookUI(self):
         # 1. Create
         self.layout = QtWidgets.QVBoxLayout()
         self.layout_options = QtWidgets.QGridLayout()
         self.label_title = QtWidgets.QLabel(
-            "<h1>Utility tool to repath references.</h1>"
+            f"<h1>RefRepath v{refrepath.__version__}</h1>"
+            f"<h4>Utility tool to repath references.</h4>"
         )
         self.label_description = QtWidgets.QLabel(
             (
@@ -132,10 +133,13 @@ class RefRepathWidget(QtWidgets.QDialog):
         )
         self.label_maya_file = QtWidgets.QLabel("Maya File")
         self.label_root_dir = QtWidgets.QLabel("New Root Directory")
+        self.label_denominator = QtWidgets.QLabel("Common Denominator")
         self.lineedit_maya_file = QtWidgets.QLineEdit()
         self.lineedit_root_dir = QtWidgets.QLineEdit()
+        self.lineedit_denominator = QtWidgets.QLineEdit()
         self.button_browse_file = QtWidgets.QPushButton("Browse")
         self.button_browse_dir = QtWidgets.QPushButton("Browse")
+        self.checkbox_denominator = QtWidgets.QCheckBox("Edit")
         self.button_box = QtWidgets.QDialogButtonBox()
         self.button_execute = QtWidgets.QPushButton("Execute")
 
@@ -151,6 +155,9 @@ class RefRepathWidget(QtWidgets.QDialog):
         self.layout_options.addWidget(self.label_root_dir, 1, 0)
         self.layout_options.addWidget(self.lineedit_root_dir, 1, 1)
         self.layout_options.addWidget(self.button_browse_dir, 1, 2)
+        self.layout_options.addWidget(self.label_denominator, 2, 0)
+        self.layout_options.addWidget(self.lineedit_denominator, 2, 1)
+        self.layout_options.addWidget(self.checkbox_denominator, 2, 2)
 
         # 3. Modify
         self.layout.setSpacing(15)
@@ -158,15 +165,28 @@ class RefRepathWidget(QtWidgets.QDialog):
         self.layout_options.setContentsMargins(*(15,) * 4)
         self.button_box.setStandardButtons(self.button_box.Cancel)
         self.button_box.addButton(self.button_execute, self.button_box.AcceptRole)
+        self.checkbox_denominator.setChecked(False)
         # 4. Connections
         self.button_box.rejected.connect(self.reject)
         self.button_browse_file.clicked.connect(self.browse_maya_file)
         self.button_browse_dir.clicked.connect(self.browse_root_directory)
         self.button_execute.clicked.connect(self.repath_references)
+        self.checkbox_denominator.stateChanged.connect(
+            self.on_checkbox_denominator_change
+        )
+        self.lineedit_root_dir.textChanged.connect(self.on_checkbox_denominator_change)
         return
 
-    def bakeUI(self):
-        pass
+    def on_checkbox_denominator_change(self, *args):
+        checked = self.checkbox_denominator.isChecked()
+        self.lineedit_denominator.setEnabled(checked)
+        self.label_denominator.setEnabled(checked)
+
+        root_dir = self.lineedit_root_dir.text()
+
+        if not checked and root_dir:
+            root_dir = Path(root_dir)
+            self.lineedit_denominator.setText(root_dir.name)
 
     def browse_maya_file(self):
         file_filter = "Maya Files (*.ma *.mb)"
@@ -204,6 +224,10 @@ class RefRepathWidget(QtWidgets.QDialog):
         if not root_substitute:
             raise ValueError("No New Root directory path supplied.")
 
+        common_denominator = self.lineedit_denominator.text()
+        if not common_denominator:
+            raise ValueError("No Common Denominator directory path supplied.")
+
         maya_file_path = Path(maya_file_path)
         if not maya_file_path.exists():
             raise FileNotFoundError(
@@ -216,7 +240,13 @@ class RefRepathWidget(QtWidgets.QDialog):
                 f"Root directory path doesn't exists on disk: {root_substitute}"
             )
 
-        common_denominator = Path(root_substitute.name)
+        if common_denominator not in str(root_substitute):
+            raise ValueError(
+                f"Denominator has to be found in the New Root Directory: "
+                f"<{common_denominator}> not in <{root_substitute}>"
+            )
+        common_denominator = Path(common_denominator)
+
         repathed_references = open_and_repath_references(
             maya_file_path=maya_file_path,
             common_denominator=common_denominator,
