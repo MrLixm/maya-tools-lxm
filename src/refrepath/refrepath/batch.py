@@ -217,6 +217,9 @@ def process_session():
 
     # easier debugging
     maya.mel.eval("stackTrace -state on")
+    refrepath.maya_utils.override_maya_logging()
+
+    logger.info("Started.")
 
     source_maya_file = os.getenv(FileBatcher.Variables.arg_maya_file)
     source_common_denominator = os.getenv(FileBatcher.Variables.arg_denominator)
@@ -229,12 +232,18 @@ def process_session():
     ):
         raise EnvironmentError("Missing one of the REFREPATH_ARG... variable.")
 
-    refrepath.maya_utils.override_maya_logging()
-    refrepath.core.open_and_repath_references(
+    repathed_references = refrepath.core.open_and_repath_references(
         maya_file_path=Path(source_maya_file),
         common_denominator=Path(source_common_denominator),
         root_substitute=Path(source_root_substitute),
     )
-    # TODO, save if only refs edited
-    refrepath.maya_utils.save_scene_increment()
+
+    # only save the scene if we actually edited at least one reference
+    any_reference_edited = any(
+        [repathed_ref.was_updated() for repathed_ref in repathed_references]
+    )
+    if any_reference_edited:
+        refrepath.maya_utils.save_scene_increment()
+
+    logger.info("Finished.")
     return

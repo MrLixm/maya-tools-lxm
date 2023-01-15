@@ -22,11 +22,24 @@ def get_references() -> list[str]:
     return scene_reference_list
 
 
+class RepathedReference:
+    def __init__(self, node_name: str, previous_path: Path, new_path: Path):
+        self.node_name: str = node_name
+        self.previous_path: Path = previous_path
+        self.new_path: Path = new_path
+
+    def was_updated(self) -> bool:
+        """
+        True if the new path was different from the previous path.
+        """
+        return not self.previous_path == self.new_path
+
+
 def repath_reference(
     node_name,
     common_denominator: Path,
     root_substitute: Path,
-) -> tuple[Path, Path]:
+) -> RepathedReference:
     """
     Given the reference node name, edit its path to an existing one, so it can be loaded.
 
@@ -38,8 +51,7 @@ def repath_reference(
             new "prefix" part of the path to use
 
     Returns:
-        previous path, and new path set as tuple[previous_path, new_path].
-        Can be the same path value for both.
+        result of teh repathing as RepathedReference instance
 
     Raises:
         ValueError: cannot retrieve reference file path
@@ -60,9 +72,15 @@ def repath_reference(
     if not new_path.exists():
         raise FileNotFoundError(f"New path computed doesn't exist on disk: {new_path}")
 
-    if current_path == new_path:
-        logger.info(f"Returning earlier, path is already good on <{node_name}>")
-        return current_path, new_path
+    repathed_reference = RepathedReference(
+        node_name,
+        previous_path=current_path,
+        new_path=new_path,
+    )
+
+    if not repathed_reference.was_updated():
+        logger.info(f"Returning earlier, path is already up-to-date on <{node_name}>")
+        return repathed_reference
 
     logger.info(f"new_path={new_path}")
 
@@ -74,17 +92,14 @@ def repath_reference(
     except Exception as excp:
         logger.error(f"{excp}")
 
-    return current_path, new_path
-
-
-ReferenceRepathingResultType = dict[str, dict[str, Path]]
+    return repathed_reference
 
 
 def open_and_repath_references(
     maya_file_path: Path,
     common_denominator: Path,
     root_substitute: Path,
-) -> ReferenceRepathingResultType:
+) -> list[RepathedReference]:
     """
     Open the given maya file and repath all the references inside.
 
@@ -96,8 +111,7 @@ def open_and_repath_references(
             new "prefix" part of the path to use
 
     Returns:
-        dict of references repathed with their path values as
-        dict["ref name": {"previous": "file path", "new": "file path"}]
+        list of RepathedReference instances.
     """
 
     logger.info(f"Opening <{maya_file_path}> ...")
@@ -116,23 +130,21 @@ def open_and_repath_references(
     scene_reference_list = get_references()
     if not scene_reference_list:
         logger.info("Returned early: no references in scene.")
+        return []
 
-    repathed_references = {}
+    repathed_reference_list = []
 
     for index, scene_reference in enumerate(scene_reference_list):
 
         logger.info(
             f"{index+1}/{len(scene_reference_list)} Repathing {scene_reference} ..."
         )
-        previous_path, new_path = repath_reference(
+        repathed_reference = repath_reference(
             node_name=scene_reference,
             common_denominator=common_denominator,
             root_substitute=root_substitute,
         )
-        repathed_references[scene_reference] = {
-            "previous": previous_path,
-            "new": new_path,
-        }
+        repathed_reference_list.append(repathed_reference)
 
     logger.info(f"Finished.")
-    return repathed_references
+    return repathed_reference_list

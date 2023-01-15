@@ -9,7 +9,7 @@ from PySide2 import QtWidgets
 from PySide2 import QtCore
 from maya import cmds
 
-from .core import ReferenceRepathingResultType
+from .core import RepathedReference
 from .core import open_and_repath_references
 
 logger = logging.getLogger(__name__)
@@ -31,9 +31,9 @@ class RefRepathResultDialog(QtWidgets.QDialog):
 
     NAME = "RefRepathResultDialog"
 
-    def __init__(self, repathing_result: ReferenceRepathingResultType, parent=None):
+    def __init__(self, repathing_result: list[RepathedReference], parent=None):
         super().__init__(parent)
-        self._repathing_result: ReferenceRepathingResultType = repathing_result
+        self._repathing_result: list[RepathedReference] = repathing_result
         self.setWindowTitle("RefRepath Result Dialog")
         self.setObjectName(self.NAME)
         self.cookUI()
@@ -92,16 +92,16 @@ class RefRepathResultDialog(QtWidgets.QDialog):
 
         self.treewidget.clear()
 
-        for ref_name, ref_result in self._repathing_result.items():
+        for repathed_reference in self._repathing_result:
             item_ref = QtWidgets.QTreeWidgetItem(self.treewidget)
-            item_ref.setText(0, ref_name)
+            item_ref.setText(0, repathed_reference.node_name)
 
             item_previous = QtWidgets.QTreeWidgetItem(item_ref)
             item_previous.setText(0, "previous")
-            item_previous.setText(1, str(ref_result["previous"]))
+            item_previous.setText(1, str(repathed_reference.previous_path))
             item_new = QtWidgets.QTreeWidgetItem(item_ref)
             item_new.setText(0, "new")
-            item_new.setText(1, str(ref_result["new"]))
+            item_new.setText(1, str(repathed_reference.new_path))
 
         return
 
