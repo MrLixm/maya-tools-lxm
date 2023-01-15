@@ -6,6 +6,14 @@ Must be executed from a Maya context, on an empty scene if possible.
 import logging
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
+
+# HACK for pycharm autocompletion, actual import is performed in gui() function
+# noinspection PyUnreachableCode
+if False:
+    from PySide2 import QtWidgets
+    from PySide2 import QtGui
+    from PySide2 import QtCore
 
 from maya import cmds
 
@@ -175,167 +183,90 @@ def catch_exception():
     try:
         yield
     except Exception as excp:
-        cmds.confirmDialog(title="Error", icon="error", message=str(excp))
+        cmds.confirmDialog(title="Error", icon="warning", message=str(excp))
     return
 
 
-class RefRepathWindow:
+class RefRepathWidget(QtWidgets.QDialog):
 
-    NAME = "RefRepath"
+    NAME = "RefRepathWidget"
 
-    def __init__(self):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("RefRepath")
+        self.setObjectName(self.NAME)
+        self.cookUI()
+        self.bakeUI()
 
-        self.delete_if_exists()
-        self.window = cmds.window(self.NAME, title=self.NAME, widthHeight=(800, 300))
-        self.build()
-
-    def build(self):
-        """
-        We build all the interface elements in this method.
-        """
-
-        class Style:
-            padding_main_window = 15
-            width_button = 80
-            margin_widget_base = 10
-
-        self.layout_main = cmds.frameLayout(
-            collapsable=False,
-            labelVisible=False,
-            marginWidth=10,
-            marginHeight=10,
+    def cookUI(self):
+        # 1. Create
+        self.layout = QtWidgets.QVBoxLayout()
+        self.layout_options = QtWidgets.QGridLayout()
+        self.label_title = QtWidgets.QLabel(
+            "<h1>Utility tool to repath references.</h1>"
         )
-        cmds.separator(height=10, style="none")
-        cmds.text(
-            label="<h1>Utility to repath references.</h1>",
-            align="center",
-            recomputeSize=True,
-        )
-        cmds.separator(height=20, style="none")
-        cmds.text(
-            label=(
+        self.label_description = QtWidgets.QLabel(
+            (
                 "The given Maya file will be opened, all references will be repath. "
                 "You then decide how to save it."
-            ),
-            align="center",
-            recomputeSize=True,
+            )
         )
-        cmds.separator(height=20, style="none")
-        self.layout_options = cmds.rowColumnLayout(numberOfColumns=5)
-        cmds.rowColumnLayout(self.layout_options, edit=True, adjustableColumn=3)
-        cmds.rowColumnLayout(self.layout_options, edit=True, columnAlign=[2, "center"])
-        cmds.rowColumnLayout(
-            self.layout_options,
-            edit=True,
-            rowSpacing=[1, Style.margin_widget_base],
-        ),
-        cmds.rowColumnLayout(
-            self.layout_options,
-            edit=True,
-            columnSpacing=[3, Style.margin_widget_base],
-        )
-        cmds.rowColumnLayout(
-            self.layout_options,
-            edit=True,
-            columnSpacing=[4, Style.margin_widget_base],
-        )
+        self.label_maya_file = QtWidgets.QLabel("Maya File")
+        self.label_root_dir = QtWidgets.QLabel("New Root Directory")
+        self.lineedit_maya_file = QtWidgets.QLineEdit()
+        self.lineedit_root_dir = QtWidgets.QLineEdit()
+        self.button_browse_file = QtWidgets.QPushButton("Browse")
+        self.button_browse_dir = QtWidgets.QPushButton("Browse")
+        self.button_box = QtWidgets.QDialogButtonBox()
+        self.button_execute = QtWidgets.QPushButton("Execute")
 
-        first_column_size = 130
+        # 2. Add
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.label_title)
+        self.layout.addWidget(self.label_description)
+        self.layout.addLayout(self.layout_options)
+        self.layout.addWidget(self.button_box)
+        self.layout_options.addWidget(self.label_maya_file, 0, 0)
+        self.layout_options.addWidget(self.lineedit_maya_file, 0, 1)
+        self.layout_options.addWidget(self.button_browse_file, 0, 2)
+        self.layout_options.addWidget(self.label_root_dir, 1, 0)
+        self.layout_options.addWidget(self.lineedit_root_dir, 1, 1)
+        self.layout_options.addWidget(self.button_browse_dir, 1, 2)
 
-        with marginwrapper(Style.padding_main_window):
-
-            cmds.text(
-                label="Maya File",
-                align="right",
-                font="boldLabelFont",
-                recomputeSize=False,
-                width=first_column_size,
-            )
-            self.textfield_maya_file = cmds.textField(
-                annotation="Path to a Maya file.",
-            )
-            self.button_browse_file = cmds.button(
-                label="Browse",
-                command=self.browse_maya_file,
-                width=Style.width_button,
-            )
-
-        with marginwrapper(Style.padding_main_window):
-
-            cmds.text(
-                label="New Root Directory",
-                align="right",
-                font="boldLabelFont",
-                width=first_column_size,
-            )
-            self.textfield_new_root = cmds.textField(
-                annotation="Path to an existing directory.",
-            )
-            self.button_browse_root = cmds.button(
-                label="Browse",
-                command=self.browse_root_directory,
-                width=Style.width_button,
-            )
-        # end the layout_options
-        cmds.setParent("..")
-
-        cmds.separator(height=10, style="none")
-
-        self.layout_button01 = cmds.rowColumnLayout(numberOfColumns=5)
-        cmds.rowColumnLayout(self.layout_button01, edit=True, adjustableColumn=1)
-        cmds.rowColumnLayout(
-            self.layout_button01,
-            edit=True,
-            columnSpacing=[4, Style.margin_widget_base],
-        )
-
-        cmds.separator(width=1, style="none")  # adjustable column
-
-        with marginwrapper(Style.padding_main_window):
-
-            self.button_start = cmds.button(
-                label="Start",
-                command=self.repath_references,
-                width=Style.width_button,
-            )
-            self.button_cancel = cmds.button(
-                label="Cancel",
-                command=self.delete_if_exists,
-                width=Style.width_button,
-            )
-        # end the layout_button01
-        cmds.setParent("..")
-
-        # end the layout_main
-        cmds.setParent("..")
+        # 3. Modify
+        self.layout.setContentsMargins(*(25,) * 4)
+        self.layout_options.setContentsMargins(*(15,) * 4)
+        self.button_box.setStandardButtons(self.button_box.Cancel)
+        self.button_box.addButton(self.button_execute, self.button_box.AcceptRole)
+        # 4. Connections
+        self.button_box.rejected.connect(self.reject)
+        self.button_browse_file.clicked.connect(self.browse_maya_file)
+        self.button_browse_dir.clicked.connect(self.browse_root_directory)
+        self.button_execute.clicked.connect(self.repath_references)
         return
 
-    def delete_if_exists(self, *args):
-        if cmds.windowPref(self.NAME, query=True, exists=True):
-            cmds.windowPref(self.NAME, remove=True)
-        if cmds.window(self.NAME, query=True, exists=True):
-            cmds.deleteUI(self.NAME, window=True)
-        return
+    def bakeUI(self):
+        pass
 
-    def browse_maya_file(self, *args):
+    def browse_maya_file(self):
         file_filter = "Maya Files (*.ma *.mb)"
         file_path = cmds.fileDialog2(fileFilter=file_filter, dialogStyle=2, fileMode=1)
         if not file_path:
             return
         file_path = file_path[0]
-        cmds.textField(self.textfield_maya_file, edit=True, text=file_path)
+        self.lineedit_maya_file.setText(file_path)
         return
 
-    def browse_root_directory(self, *args):
+    def browse_root_directory(self):
         dir_path = cmds.fileDialog2(dialogStyle=2, fileMode=2)
         if not dir_path:
             return
         dir_path = dir_path[0]
-        cmds.textField(self.textfield_new_root, edit=True, text=dir_path)
+        self.lineedit_root_dir.setText(dir_path)
         return
 
     @catch_exception()
-    def repath_references(self, *args):
+    def repath_references(self):
         """
         Main function of the interface
         """
@@ -345,11 +276,11 @@ class RefRepathWindow:
                 "Current scene is already saved on disk. Please execute from a blank scene."
             )
 
-        maya_file_path = cmds.textField(self.textfield_maya_file, query=True, text=True)
+        maya_file_path = self.lineedit_maya_file.text()
         if not maya_file_path:
             raise ValueError("No Maya file path supplied.")
 
-        root_substitute = cmds.textField(self.textfield_new_root, query=True, text=True)
+        root_substitute = self.lineedit_root_dir.text()
         if not root_substitute:
             raise ValueError("No New Root directory path supplied.")
 
@@ -374,19 +305,37 @@ class RefRepathWindow:
         )
         return
 
-    def show(self):
-        cmds.showWindow(self.window)
-        return
-
 
 def gui():
     """
     Create and show the interface to the user
     """
+    global REFREPATH_WINDOW
 
-    mywindow = RefRepathWindow()
-    mywindow.show()
+    try:
+        REFREPATH_WINDOW.close()
+        REFREPATH_WINDOW.deleteLater()
+        logger.info(f"Removed existing REFREPATH_WINDOW={REFREPATH_WINDOW}")
+    except:
+        REFREPATH_WINDOW = None
 
+    # deferred imports
+    import shiboken2
+    import maya.OpenMayaUI
+    from PySide2 import QtWidgets
+    from PySide2 import QtGui
+    from PySide2 import QtCore
+
+    main_window: Optional[QtWidgets.QWidget] = None
+    main_window_pointer = maya.OpenMayaUI.MQtUtil.mainWindow()
+    if main_window_pointer is not None:
+        main_window = shiboken2.wrapInstance(
+            int(main_window_pointer), QtWidgets.QWidget
+        )
+
+    REFREPATH_WINDOW = RefRepathWidget(parent=main_window)
+    REFREPATH_WINDOW.show()
+    logger.info(f"Created REFREPATH_WINDOW={REFREPATH_WINDOW}.")
     return
 
 
