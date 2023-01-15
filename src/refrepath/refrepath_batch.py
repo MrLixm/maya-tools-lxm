@@ -289,10 +289,6 @@ def process_all_maya_files_from(parse_root_path: Path, root_substitute_path: Pat
 
     for file_index, maya_file in enumerate(maya_file_list):
 
-        # TODO temp
-        if maya_file.name != "Final.ma":
-            continue
-
         log_path = get_log_file(maya_file)
         process_file(
             maya_file,
