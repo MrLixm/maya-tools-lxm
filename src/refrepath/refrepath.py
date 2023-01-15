@@ -20,40 +20,13 @@ from maya import cmds
 logger = logging.getLogger(__name__)
 
 
-def override_maya_logging():
+def repath_reference(
+    node_name,
+    common_denominator: Path,
+    root_substitute: Path,
+) -> tuple[Path, Path]:
     """
-    Override default maya python logger with a better formatter
-    """
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="{levelname: <7} | {asctime} [{name}][{funcName}] {message}",
-        style="{",
-        force=True,
-    )
-    return
-
-
-def save_scene_increment():
-    """
-    Save the current scene on disk with an increment in its filename.
-    """
-    current_scene_path = Path(cmds.file(query=True, sceneName=True))
-
-    increment = 1
-    new_scene_path = Path(current_scene_path)
-    while new_scene_path.exists():
-        new_scene_name = current_scene_path.stem + "." + f"{increment}".zfill(4)
-        new_scene_path = current_scene_path.with_stem(new_scene_name)
-
-    cmds.file(rename=new_scene_path)
-    logger.info("Saving {} ...".format(new_scene_path))
-    cmds.file(save=True)
-    return
-
-
-def repath_reference(node_name, common_denominator: Path, root_substitute: Path):
-    """
-    Given the reference node name, edit its path to an existing one so it can be loaded.
+    Given the reference node name, edit its path to an existing one, so it can be loaded.
 
     Args:
         node_name: existing maya node name
@@ -61,6 +34,14 @@ def repath_reference(node_name, common_denominator: Path, root_substitute: Path)
             part of the paths common between initial reference's path and the new root_substitute one.
         root_substitute:
             new "prefix" part of the path to use
+
+    Returns:
+        previous path, and new path set as tuple[previous_path, new_path].
+        Can be the same path value for both.
+
+    Raises:
+        ValueError: cannot retrieve reference file path
+        FileNotFoundError: new path computed doesn't exist on disk
     """
 
     current_path = cmds.referenceQuery(node_name, filename=True, withoutCopyNumber=True)
@@ -75,21 +56,23 @@ def repath_reference(node_name, common_denominator: Path, root_substitute: Path)
     )
 
     if not new_path.exists():
-        raise FileNotFoundError(f"New path computed doesn't exists on disk: {new_path}")
+        raise FileNotFoundError(f"New path computed doesn't exist on disk: {new_path}")
 
     if current_path == new_path:
         logger.info(f"Returning earlier, path is already good on <{node_name}>")
-        return
+        return current_path, new_path
 
     logger.info(f"new_path{new_path}")
 
     logger.info(f"Repathing <{node_name}> ...")
+    # a reference repath can fail because of unkown node, we usually want to ignore that
+    # so that's why we just log the error and still consider the repathing sucessful.
     try:
-        cmds.file(new_path, loadReference=node_name)
+        cmds.file(str(new_path), loadReference=node_name)
     except Exception as excp:
         logger.error(f"{excp}")
 
-    return
+    return current_path, new_path
 
 
 def get_references() -> list[str]:
@@ -108,12 +91,14 @@ def get_references() -> list[str]:
     return scene_reference_list
 
 
+ReferenceRepathingResultType = dict[str, dict[str, Path]]
+
+
 def open_and_repath_references(
     maya_file_path: Path,
     common_denominator: Path,
     root_substitute: Path,
-    save_scene: bool = True,
-):
+) -> ReferenceRepathingResultType:
     """
     Open the given maya file and repath all the references inside.
 
@@ -123,8 +108,10 @@ def open_and_repath_references(
             part of the paths common between initial reference's path and the new root_substitute one.
         root_substitute:
             new "prefix" part of the path to use
-        save_scene:
-            True to save and increment the scen eonce finished
+
+    Returns:
+        dict of references repathed with their path values as
+        dict["ref name": {"previous": "file path", "new": "file path"}]
     """
 
     logger.info(f"Opening <{maya_file_path}> ...")
@@ -138,21 +125,25 @@ def open_and_repath_references(
     if not scene_reference_list:
         logger.info("Returned early: no references in scene.")
 
+    repathed_references = {}
+
     for index, scene_reference in enumerate(scene_reference_list):
 
         logger.info(
             f"{index+1}/{len(scene_reference_list)} Repathing {scene_reference} ..."
         )
-        repath_reference(
+        previous_path, new_path = repath_reference(
             node_name=scene_reference,
             common_denominator=common_denominator,
             root_substitute=root_substitute,
         )
+        repathed_references[scene_reference] = {
+            "previous": previous_path,
+            "new": new_path,
+        }
 
-    if save_scene:
-        save_scene_increment()
     logger.info(f"Finished.")
-    return
+    return repathed_references
 
 
 """-------------------------------------------------------------------------------------
@@ -160,19 +151,6 @@ def open_and_repath_references(
 GUI
 
 """
-
-
-@contextmanager
-def marginwrapper(margin_size):
-    """
-    Add a left and right margin around everything wrapped in this context.
-    """
-    cmds.separator(width=margin_size, style="none")
-    try:
-        yield
-    finally:
-        cmds.separator(width=margin_size, style="none")
-    return
 
 
 @contextmanager
@@ -185,6 +163,75 @@ def catch_exception():
     except Exception as excp:
         cmds.confirmDialog(title="Error", icon="warning", message=str(excp))
     return
+
+
+class RefRepathResultDialog(QtWidgets.QDialog):
+    def __init__(self, repathing_result: ReferenceRepathingResultType, parent=None):
+        super().__init__(parent)
+        self._repathing_result: ReferenceRepathingResultType = repathing_result
+        self.cookUI()
+        self.bakeUI()
+
+    def cookUI(self):
+        # 1. Create
+        self.layout = QtWidgets.QVBoxLayout()
+        self.label_title = QtWidgets.QLabel("<h1>Repathing Finished</h1>")
+        self.label_description = QtWidgets.QLabel()
+        self.treewidget = QtWidgets.QTreeWidget()
+        self.button_box = QtWidgets.QDialogButtonBox()
+
+        # 2. Add
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.label_title)
+        self.layout.addWidget(self.label_description)
+        self.layout.addWidget(self.treewidget)
+        self.layout.addWidget(self.button_box)
+
+        # 3. Modify
+        self.layout.setSpacing(15)
+        self.layout.setContentsMargins(*(25,) * 4)
+        self.label_title.setAlignment(QtCore.Qt.AlignCenter)
+        self.button_box.setStandardButtons(self.button_box.Ok)
+        self.treewidget.setColumnCount(2)
+        self.treewidget.setMinimumHeight(150)
+        self.treewidget.setAlternatingRowColors(True)
+        self.treewidget.setSortingEnabled(True)
+        self.treewidget.setUniformRowHeights(True)
+        self.treewidget.setRootIsDecorated(True)
+        self.treewidget.setItemsExpandable(True)
+        # select only one row at a time
+        self.treewidget.setSelectionMode(self.treewidget.SingleSelection)
+        # select only rows
+        self.treewidget.setSelectionBehavior(self.treewidget.SelectRows)
+        # remove dotted border on columns
+        self.treewidget.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.treewidget.setHeaderLabels(["Reference", "Paths"])
+        # 4. Connections
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        return
+
+    def bakeUI(self):
+
+        self.label_description.setText(
+            f"Repathed {len(self._repathing_result)} references."
+        )
+
+        self.treewidget.clear()
+
+        for ref_name, ref_result in self._repathing_result.items():
+
+            item_ref = QtWidgets.QTreeWidgetItem(self.treewidget)
+            item_ref.setText(0, ref_name)
+
+            item_previous = QtWidgets.QTreeWidgetItem(item_ref)
+            item_previous.setText(0, "previous")
+            item_previous.setText(1, str(ref_result["previous"]))
+            item_new = QtWidgets.QTreeWidgetItem(item_ref)
+            item_new.setText(0, "new")
+            item_new.setText(1, str(ref_result["new"]))
+
+        return
 
 
 class RefRepathWidget(QtWidgets.QDialog):
@@ -234,6 +281,7 @@ class RefRepathWidget(QtWidgets.QDialog):
         self.layout_options.addWidget(self.button_browse_dir, 1, 2)
 
         # 3. Modify
+        self.layout.setSpacing(15)
         self.layout.setContentsMargins(*(25,) * 4)
         self.layout_options.setContentsMargins(*(15,) * 4)
         self.button_box.setStandardButtons(self.button_box.Cancel)
@@ -297,12 +345,18 @@ class RefRepathWidget(QtWidgets.QDialog):
             )
 
         common_denominator = Path(root_substitute.name)
-        open_and_repath_references(
+        repathed_references = open_and_repath_references(
             maya_file_path=maya_file_path,
             common_denominator=common_denominator,
             root_substitute=root_substitute,
-            save_scene=False,
         )
+
+        result_dialog = RefRepathResultDialog(
+            repathing_result=repathed_references,
+            parent=self,
+        )
+        result_dialog.show()
+        logger.info("Finished")
         return
 
 
