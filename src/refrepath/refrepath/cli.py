@@ -57,13 +57,15 @@ def cli():
     """
 
     parser = argparse.ArgumentParser(
+        prog=c.name,
         description=(
             "Repath references in multiple maya files at once.\n"
             "References are repathed using the name of the submitted root directory as "
             "a common denominator. This is useful if only the left-most part of the "
             "path have to be updated."
-        )
+        ),
     )
+    parser.add_argument("--version", action="version", version=c.__version__)
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -75,7 +77,7 @@ def cli():
         help="Do not actually launch Maya and don't write any file to disk.",
     )
     parser.add_argument(
-        "parse_root_path",
+        "maya_file_dir",
         help=(
             "Path to an existing disk to parse maya files from. If no other argument is "
             "specified, this will also be used as the new root directory for references repathing."
@@ -83,8 +85,14 @@ def cli():
         type=str,
     )
     parser.add_argument(
-        "--substitute_root_path",
+        "--new_root_dir",
         help="Directory path used as root for reference repathing.",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--denominator",
+        help="Part of the new_root_dir path used to split the initial reference path.",
         type=str,
         default=None,
     )
@@ -93,25 +101,44 @@ def cli():
     if parsed.dry_run:
         c.DRYRUN = True
 
-    parse_root_path = Path(parsed.parse_root_path)
-    if not parse_root_path.exists():
+    maya_file_dir = Path(parsed.maya_file_dir)
+    if not maya_file_dir.exists():
         raise FileNotFoundError(
-            f"Given root_path doesn't exist on disk: {parse_root_path}"
-        )
-
-    substitute_root_path = parsed.substitute_root_path
-    if not substitute_root_path:
-        substitute_root_path = parse_root_path
-    else:
-        substitute_root_path = Path(substitute_root_path)
-    if not substitute_root_path.exists():
-        raise FileNotFoundError(
-            f"Given substitute_root_path doesn't exist on disk: {substitute_root_path}"
+            f"Given maya_file_dir doesn't exist on disk: {maya_file_dir}"
         )
 
     logging_level = logging.DEBUG if parsed.debug else logging.INFO
-    configure_logging(parse_root_path, logging_level)
-    batch_directory(parse_root_path, substitute_root_path)
+    configure_logging(maya_file_dir, logging_level)
+
+    new_root_dir = parsed.new_root_dir
+    if not new_root_dir:
+        new_root_dir = maya_file_dir
+    else:
+        new_root_dir = Path(new_root_dir)
+    if not new_root_dir.exists():
+        raise FileNotFoundError(
+            f"Given new_root_dir doesn't exist on disk: {new_root_dir}"
+        )
+
+    denominator = parsed.denominator
+    if not denominator:
+        denominator = new_root_dir.name
+
+    denominator = Path(denominator)
+
+    if not c.Env.get(c.Env.maya_batch):
+        logger.warning("! missing MAYA_BATCH_PATH env var. Using default value.")
+    maya_batch = c.Env.get(
+        c.Env.maya_batch,
+        r"C:\Program Files\Autodesk\Maya2023\bin\mayabatch.exe",
+    )
+
+    batch_directory(
+        maya_files_dir=maya_file_dir,
+        new_root_dir=new_root_dir,
+        denominator=denominator,
+        maya_batch_path=maya_batch,
+    )
 
 
 if __name__ == "__main__":

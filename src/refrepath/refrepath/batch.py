@@ -33,11 +33,13 @@ class FileBatcher:
         maya_file: Path,
         common_denominator: Path,
         root_substitute: Path,
+        maya_batch_path: Path,
     ):
 
         self.maya_file = maya_file
         self.common_denominator = common_denominator
         self.root_substitute = root_substitute
+        self.maya_batch_path = maya_batch_path
 
         self.time = datetime.datetime.now()
         """
@@ -115,13 +117,8 @@ class FileBatcher:
             repr(maya_python_command).lstrip('"').rstrip('"').lstrip("'").rstrip("'")
         )
 
-        maya_batch = c.Env.get(
-            c.Env.maya_batch,
-            r"C:\Program Files\Autodesk\Maya2023\bin\mayabatch.exe",
-        )
-
         command = [
-            str(maya_batch),
+            str(self.maya_batch_path),
             "-command",
             f'"python(\\"{maya_python_command}\\")"',
             "-log",
@@ -164,27 +161,31 @@ class FileBatcher:
         return process_result
 
 
-def batch_directory(directory_path: Path, root_substitute_path: Path):
+def batch_directory(
+    maya_files_dir: Path,
+    new_root_dir: Path,
+    denominator: Path,
+    maya_batch_path: Path,
+):
     """
     Parse the given directory to find all maya file and repath all references inside them.
 
     Args:
-        directory_path: initial directory to parse recursively for maya files.
-        root_substitute_path: directory path used as root for reference repathing.
+        maya_files_dir: initial directory to parse recursively for maya files.
+        new_root_dir: directory path used as root for reference repathing.
+        denominator:
+        maya_batch_path: path to the mayabatch.exe file to use for batching.
     """
 
-    logger.info(
+    logger.debug(
         f"Started with:\n"
-        f"    parse_root_path={directory_path}\n"
-        f"    root_substitute_path={root_substitute_path}"
+        f"    maya_files_dir={maya_files_dir}\n"
+        f"    new_root_dir={new_root_dir}\n"
+        f"    denominator={denominator}\n"
+        f"    maya_batch_path={maya_batch_path}"
     )
 
-    if not c.Env.get(c.Env.maya_batch):
-        logger.warning("! missing MAYA_BATCH_PATH env var. Using default value.")
-
-    common_denominator = Path(root_substitute_path.name)
-
-    maya_file_list = get_maya_files_recursively(directory_path)
+    maya_file_list = get_maya_files_recursively(maya_files_dir)
 
     logger.info(f"About to process {len(maya_file_list)} files.")
 
@@ -192,8 +193,9 @@ def batch_directory(directory_path: Path, root_substitute_path: Path):
 
         file_batcher = FileBatcher(
             maya_file=maya_file,
-            common_denominator=common_denominator,
-            root_substitute=root_substitute_path,
+            common_denominator=denominator,
+            root_substitute=new_root_dir,
+            maya_batch_path=maya_batch_path,
         )
         file_batcher.execute()
 
