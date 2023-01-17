@@ -1,3 +1,4 @@
+import enum
 import logging
 import os
 from pathlib import Path
@@ -58,3 +59,84 @@ def get_maya_files_recursively(root_path) -> list[Path]:
     )
 
     return maya_file_list
+
+
+class ColoredFormatter(logging.Formatter):
+    """
+    References:
+        -[1] https://stackoverflow.com/a/56944256/3638629
+    """
+
+    class Colors(enum.Enum):
+        """
+
+        30-37 foreground :
+            0 	black
+            1 	red
+            2 	green
+            3 	yellow
+            4 	blue
+            5 	magenta
+            6 	cyan
+            7 	white
+        ;
+        1 = bold/+intensity
+        2 = faint or decreased intensity
+        """
+
+        reset = "\x1b[0m"
+        black = "\x1b[30m"
+        black_bold = "\x1b[30;1m"
+        black_faint = "\x1b[30;2m"
+        red = "\x1b[31m"
+        red_bold = "\x1b[31;1m"
+        red_faint = "\x1b[31;2m"
+        green = "\x1b[32m"
+        green_bold = "\x1b[32;1m"
+        green_faint = "\x1b[32;2m"
+        yellow = "\x1b[33m"
+        yellow_bold = "\x1b[33;1m"
+        yellow_faint = "\x1b[33;2m"
+        blue = "\x1b[34m"
+        blue_bold = "\x1b[34;1m"
+        blue_faint = "\x1b[34;2m"
+        magenta = "\x1b[35m"
+        magenta_bold = "\x1b[35;1m"
+        magenta_faint = "\x1b[35;2m"
+        cyan = "\x1b[36m"
+        cyan_bold = "\x1b[36;1m"
+        cyan_faint = "\x1b[36;2m"
+        white = "\x1b[37m"
+        white_bold = "\x1b[37;1m"
+        white_faint = "\x1b[37;2m"
+        grey = "\x1b[39m"
+
+    COLOR_BY_LEVEL = {
+        logging.DEBUG: Colors.grey,
+        logging.INFO: Colors.blue,
+        logging.WARNING: Colors.yellow,
+        logging.ERROR: Colors.red,
+        logging.CRITICAL: Colors.red_bold,
+    }
+
+    def __init__(self, fmt, *args, **kwargs):
+        super().__init__(fmt, *args, **kwargs)
+
+        self._formatter_by_color = {}
+        for color in self.Colors:
+            self._formatter_by_color[color.name] = logging.Formatter(
+                f"{color.value}{fmt}{color.reset.value}", *args, **kwargs
+            )
+        self._default_formatter = logging.Formatter(f"{fmt}", *args, **kwargs)
+
+    def format(self, record):
+
+        color = self.COLOR_BY_LEVEL.get(record.levelno, None)
+        color = color.name
+        if hasattr(record, "color"):
+            color = record.color
+            delattr(record, "color")
+
+        formatter = self._formatter_by_color.get(color, self._default_formatter)
+
+        return formatter.format(record)

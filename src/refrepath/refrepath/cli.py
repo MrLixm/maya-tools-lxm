@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .batch import batch_directory
 from . import c
+from .utils import ColoredFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,9 @@ def configure_logging(root_path: Path, level: int):
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
+        "{levelname: <7} | {asctime} [{name}][{funcName}] {message}", style="{"
+    )
+    formatter = ColoredFormatter(
         "{levelname: <7} | {asctime} [{name}][{funcName}] {message}", style="{"
     )
 
