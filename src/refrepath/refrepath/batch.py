@@ -88,15 +88,16 @@ class FileBatcher:
         python_path += f"{os.pathsep}{str(refrepath_package)}"
         env["PYTHONPATH"] = python_path
 
+        # avoid conflict, make a clean env
+        env["PATH"] = ""
+        env.pop("_", None)
+        env.pop("VIRTUAL_ENV", None)
+
         # network crap optimizations
         env["MAYA_DISABLE_CLIC_IPM"] = "1"
         env["MAYA_DISABLE_CIP"] = "1"
         env["MAYA_DISABLE_CER"] = "1"
         env["MAYA_DISABLE_ADP"] = "1"
-
-        # when script executed from pycharm or else, just by safety.
-        if "VIRTUAL_ENV" in env:
-            del env["VIRTUAL_ENV"]
 
         self._env = env
         return self._env
