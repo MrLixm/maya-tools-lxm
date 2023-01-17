@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -161,6 +162,42 @@ class FileBatcher:
         logger.info(f"<{self.identifier}> Finished in {time_end - time_start}s")
         return process_result
 
+    def log_result(self, result: subprocess.CompletedProcess):
+
+        if not result:
+            return
+
+        stdout_result = result.stdout.decode("utf-8")
+        stdout_lines = stdout_result.split("\r\r\n")
+
+        logged_ref_num = False
+
+        for stdout_line in stdout_lines:
+
+            if stdout_line.startswith("ERROR   | 2"):
+                logger.error(f"<{self.identifier}> {stdout_line}")
+
+            elif "no references in scene" in stdout_line:
+                logger.info(f"<{self.identifier}> No references in scene.")
+
+            regex_match = re.search(
+                r"open_and_repath_references.+\w\d*/(\d*)", stdout_line
+            )
+            if regex_match and not logged_ref_num:
+                logged_ref_num = True
+                logger.info(
+                    f"<{self.identifier}> Processed {regex_match.group(1)} references."
+                )
+
+            regex_match = re.search(
+                r"save_scene_increment.+Saving(.+)\.\.\.", stdout_line
+            )
+            if regex_match:
+                logger.info(f"<{self.identifier}> Saved to {regex_match.group(1)}")
+
+        logger.info(f"<{self.identifier}> Finished.")
+        return
+
 
 def batch_directory(
     maya_files_dir: Path,
@@ -198,7 +235,8 @@ def batch_directory(
             root_substitute=new_root_dir,
             maya_batch_path=maya_batch_path,
         )
-        file_batcher.execute()
+        batch_result = file_batcher.execute()
+        file_batcher.log_result(result=batch_result)
 
         logger.info(f"{file_index+1}/{len(maya_file_list)} completed.")
         continue
