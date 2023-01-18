@@ -1,6 +1,7 @@
 import enum
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -59,6 +60,51 @@ def get_maya_files_recursively(root_path) -> list[Path]:
     )
 
     return maya_file_list
+
+
+def increment_path(current_path: Path, zfill: int = 4) -> Path:
+    """
+    From the given file path, increment it until it doesn't exist it on disk.
+
+    Increment are expected to be suffixed just before the file extension separated by a dot.
+    Ex: ``myScene.0012.ma``.
+
+    If the current_path has no increment yet at all, it will be added.
+
+    Examples::
+
+        >>> increment_path("C:/demo/file.abc")
+        Path("C:/demo/file.0001.abc")  #(0001 doesn't exist on disk)
+        >>> increment_path("C:/demo/file.abc", 2)
+        Path("C:/demo/file.01.abc")  #(01 doesn't exist on disk)
+        >>> increment_path("C:/demo/file.01.abc", 2)
+        Path("C:/demo/file.02.abc")
+
+    Args:
+        current_path: file path that may or may not exist yet.
+        zfill: number of zero for padding on file name increment
+
+    Returns:
+        non-existing file path
+    """
+
+    increment = 1
+    existing_increment = re.search(rf"\.\d{{{zfill}}}$", current_path.stem)
+    new_scene_path = Path(current_path)
+
+    while new_scene_path.exists() or increment == 1:
+
+        increment_less_path = current_path.stem
+        if existing_increment:
+            increment_less_path = increment_less_path.replace(
+                existing_increment.group(0), ""
+            )
+
+        new_scene_name = increment_less_path + "." + f"{increment}".zfill(zfill)
+        new_scene_path = current_path.with_stem(new_scene_name)
+        increment += 1
+
+    return new_scene_path
 
 
 class ColoredFormatter(logging.Formatter):
