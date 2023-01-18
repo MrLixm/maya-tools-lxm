@@ -83,3 +83,13 @@ DRYRUN = False
 True to process the code by making sure nothing is wrote/edited from disk.
 True is often used for debugging purposes.
 """
+
+PATH_ZFILL: int = 4
+"""
+Number of zero to use on file path increment.
+"""
+
+PATH_BACKUP_SUFFIX: str = ".original"
+"""
+string to use as suffix on file path for backups
+"""

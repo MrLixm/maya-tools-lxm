@@ -193,12 +193,10 @@ class FileBatcher:
                     extra={"color": "green"},
                 )
 
-            regex_match = re.search(
-                r"save_scene_increment.+Saving(.+)\.\.\.", stdout_line
-            )
+            regex_match = re.search(r"Saving backup <(.+)>", stdout_line)
             if regex_match:
                 logger.info(
-                    f"<{self.identifier}> Saved to {regex_match.group(1)}",
+                    f"<{self.identifier}> Saved backup to {regex_match.group(1)}",
                     extra={"color": "green"},
                 )
 
@@ -291,7 +289,10 @@ def process_session():
         [repathed_ref.was_updated() for repathed_ref in repathed_references]
     )
     if any_reference_edited:
-        refrepath.maya_utils.save_scene_increment()
+        refrepath.maya_utils.save_scene_and_backup(
+            backup_suffix=c.PATH_BACKUP_SUFFIX,
+            zfill=c.PATH_ZFILL,
+        )
 
     logger.info("Finished.")
     return
