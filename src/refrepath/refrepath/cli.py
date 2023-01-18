@@ -30,16 +30,15 @@ def configure_logging(root_path: Path, level: int):
     """
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        "{levelname: <7} | {asctime} [{name}][{funcName}] {message}", style="{"
-    )
-    formatter = ColoredFormatter(
-        "{levelname: <7} | {asctime} [{name}][{funcName}] {message}", style="{"
-    )
+
+    base_format = "{levelname: <7} | {asctime} [{name}][{funcName}] {message}"
+
+    formatter = logging.Formatter(base_format, style="{")
+    colored_formatter = ColoredFormatter(base_format, style="{")
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(level)
-    console_handler.setFormatter(formatter)
+    console_handler.setFormatter(colored_formatter)
     root_logger.addHandler(console_handler)
 
     if c.DRYRUN:
