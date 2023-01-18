@@ -5,7 +5,7 @@ from pathlib import Path
 
 from maya import cmds
 
-from .utils import increment_path
+from .utils import get_path_latest_backup
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +23,9 @@ def override_maya_logging():
     return
 
 
-def save_scene_and_backup(backup_suffix: str, zfill: int) -> Path:
+def save_scene_and_backup() -> Path:
     """
     Save over the current scene, but realize a backup of it as increment before.
-
-    Args:
-        backup_suffix: str to include at the end of the name. ex: ".original"
-        zfill: number of zero for padding on file name increment
 
     Returns:
         existing file path to the backup created
@@ -37,8 +33,7 @@ def save_scene_and_backup(backup_suffix: str, zfill: int) -> Path:
 
     current_scene_path = Path(cmds.file(query=True, sceneName=True))
 
-    backup_path = current_scene_path.with_stem(current_scene_path.stem + backup_suffix)
-    backup_path = increment_path(current_path=backup_path, zfill=zfill)
+    backup_path = get_path_latest_backup(current_scene_path)
 
     logger.info("Saving backup <{}> ...".format(backup_path))
     shutil.copy2(str(current_scene_path), str(backup_path))

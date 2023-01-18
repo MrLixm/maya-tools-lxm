@@ -10,6 +10,7 @@ from typing import Optional
 
 import refrepath
 from refrepath.utils import get_maya_files_recursively
+from refrepath.utils import is_backup_file
 from refrepath import c
 
 logger = logging.getLogger(__name__)
@@ -224,9 +225,7 @@ def batch_directory(
     """
 
     def is_not_backup(mfile: Path) -> bool:
-        return not bool(
-            re.match(rf"{c.PATH_BACKUP_SUFFIX}\.\d{{{c.PATH_ZFILL}}}", mfile.stem)
-        )
+        return not is_backup_file(mfile)
 
     logger.debug(
         f"Started with:\n"
@@ -302,10 +301,7 @@ def process_session():
         [repathed_ref.was_updated() for repathed_ref in repathed_references]
     )
     if any_reference_edited:
-        refrepath.maya_utils.save_scene_and_backup(
-            backup_suffix=c.PATH_BACKUP_SUFFIX,
-            zfill=c.PATH_ZFILL,
-        )
+        refrepath.maya_utils.save_scene_and_backup()
 
     logger.info("Finished.")
     return

@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Optional
 
+from refrepath import c
+
 logger = logging.getLogger(__name__)
 
 
@@ -105,6 +107,32 @@ def increment_path(current_path: Path, zfill: int = 4) -> Path:
         increment += 1
 
     return new_scene_path
+
+
+def is_backup_file(file_path: Path) -> bool:
+    """
+    Returns:
+        True if the given file is potentially a refrepath backup.
+    """
+    pattern = re.compile(rf"{re.escape(c.PATH_BACKUP_SUFFIX)}\.\d{{{c.PATH_ZFILL}}}")
+    return bool(pattern.search(file_path.stem))
+
+
+def get_path_latest_backup(original_path: Path) -> Path:
+    """
+    Get the latest backup version of the given path.
+
+    Args:
+        original_path: file path that may or may not exist, and may already be a backup path
+
+    Returns:
+        non-existing path to save backup of given original_path
+    """
+    backup_path = original_path
+    if not is_backup_file(original_path):
+        backup_path = original_path.with_stem(original_path.stem + c.PATH_BACKUP_SUFFIX)
+    backup_path = increment_path(current_path=backup_path, zfill=c.PATH_ZFILL)
+    return backup_path
 
 
 class ColoredFormatter(logging.Formatter):
