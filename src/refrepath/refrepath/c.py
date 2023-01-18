@@ -89,7 +89,7 @@ PATH_ZFILL: int = 4
 Number of zero to use on file path increment.
 """
 
-PATH_BACKUP_SUFFIX: str = ".original"
+PATH_BACKUP_SUFFIX: str = ".refrepathbackup"
 """
 string to use as suffix on file path for backups
 """

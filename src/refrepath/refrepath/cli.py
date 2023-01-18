@@ -111,6 +111,11 @@ def cli():
         type=str,
         default=c.PATH_BACKUP_SUFFIX,
     )
+    parser.add_argument(
+        "--ignore_backups",
+        action="store_true",
+        help="Do not process maya files that are considered backups from a previous repath.",
+    )
 
     parsed = parser.parse_args()
 
@@ -156,11 +161,14 @@ def cli():
         r"C:\Program Files\Autodesk\Maya2023\bin\mayabatch.exe",
     )
 
+    ignore_backups = parsed.ignore_backups
+
     batch_directory(
         maya_files_dir=maya_file_dir,
         new_root_dir=new_root_dir,
         denominator=denominator,
         maya_batch_path=maya_batch,
+        ignore_backups=ignore_backups,
     )
 
 
