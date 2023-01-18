@@ -178,22 +178,29 @@ class FileBatcher:
                 logger.error(f"<{self.identifier}> {stdout_line}")
 
             elif "no references in scene" in stdout_line:
-                logger.info(f"<{self.identifier}> No references in scene.")
+                logger.info(
+                    f"<{self.identifier}> No references in scene.",
+                    extra={"color": "green_faint"},
+                )
 
             regex_match = re.search(
-                r"open_and_repath_references.+\w\d*/(\d*)", stdout_line
+                r"open_and_repath_references.+\d+/(\d+)", stdout_line
             )
             if regex_match and not logged_ref_num:
                 logged_ref_num = True
                 logger.info(
-                    f"<{self.identifier}> Processed {regex_match.group(1)} references."
+                    f"<{self.identifier}> Processed {regex_match.group(1)} references.",
+                    extra={"color": "green"},
                 )
 
             regex_match = re.search(
                 r"save_scene_increment.+Saving(.+)\.\.\.", stdout_line
             )
             if regex_match:
-                logger.info(f"<{self.identifier}> Saved to {regex_match.group(1)}")
+                logger.info(
+                    f"<{self.identifier}> Saved to {regex_match.group(1)}",
+                    extra={"color": "green"},
+                )
 
         logger.info(f"<{self.identifier}> Finished.")
         return
