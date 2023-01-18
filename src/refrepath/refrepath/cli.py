@@ -99,10 +99,29 @@ def cli():
         type=str,
         default=None,
     )
+    parser.add_argument(
+        "--zfill",
+        help="number of zero for padding on file names increment.",
+        type=int,
+        default=c.PATH_ZFILL,
+    )
+    parser.add_argument(
+        "--backup_suffix",
+        help='str to include at the end of the name of backup files. ex: ".original"',
+        type=str,
+        default=c.PATH_BACKUP_SUFFIX,
+    )
+
     parsed = parser.parse_args()
 
     if parsed.dry_run:
         c.DRYRUN = True
+
+    if parsed.backup_suffix is not None:
+        c.PATH_BACKUP_SUFFIX = parsed.backup_suffix
+
+    if parsed.zfill is not None:
+        c.PATH_ZFILL = parsed.zfill
 
     maya_file_dir = Path(parsed.maya_file_dir)
     if not maya_file_dir.exists():
@@ -112,6 +131,7 @@ def cli():
 
     logging_level = logging.DEBUG if parsed.debug else logging.INFO
     configure_logging(maya_file_dir, logging_level)
+    logger.debug(parsed)
 
     new_root_dir = parsed.new_root_dir
     if not new_root_dir:
