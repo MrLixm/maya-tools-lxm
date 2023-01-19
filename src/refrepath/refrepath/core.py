@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Optional
 
 from maya import cmds
 
@@ -39,7 +40,7 @@ def repath_reference(
     node_name,
     common_denominator: Path,
     root_substitute: Path,
-) -> RepathedReference:
+) -> Optional[RepathedReference]:
     """
     Given the reference node name, edit its path to an existing one, so it can be loaded.
 
@@ -51,14 +52,23 @@ def repath_reference(
             new "prefix" part of the path to use
 
     Returns:
-        result of teh repathing as RepathedReference instance
+        result of the repathing as RepathedReference instance
 
     Raises:
         ValueError: cannot retrieve reference file path
         FileNotFoundError: new path computed doesn't exist on disk
     """
+    try:
+        current_path = cmds.referenceQuery(
+            node_name,
+            filename=True,
+            withoutCopyNumber=True,
+        )
+    # some references don't have filepath ??
+    except Exception as excp:
+        logger.error(excp)
+        return None
 
-    current_path = cmds.referenceQuery(node_name, filename=True, withoutCopyNumber=True)
     if not current_path:
         raise ValueError(f"Cannot retrieve reference file path on {node_name}")
 
@@ -66,7 +76,7 @@ def repath_reference(
     logger.info(f"current_path={current_path}")
 
     new_path = (
-        root_substitute / str(current_path).split(str(common_denominator))[-1][1::]
+        root_substitute / str(current_path).split(str(common_denominator), 1)[-1][1::]
     )
 
     if not new_path.exists():
@@ -80,7 +90,7 @@ def repath_reference(
 
     if not repathed_reference.was_updated():
         logger.info(f"Returning earlier, path is already up-to-date on <{node_name}>")
-        return repathed_reference
+        return None
 
     logger.info(f"new_path={new_path}")
 
@@ -144,7 +154,8 @@ def open_and_repath_references(
             common_denominator=common_denominator,
             root_substitute=root_substitute,
         )
-        repathed_reference_list.append(repathed_reference)
+        if repathed_reference:
+            repathed_reference_list.append(repathed_reference)
 
     logger.info(f"Finished.")
     return repathed_reference_list

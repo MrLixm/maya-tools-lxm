@@ -37,5 +37,7 @@ def save_scene_and_backup() -> Path:
 
     logger.info("Saving backup <{}> ...".format(backup_path))
     shutil.copy2(str(current_scene_path), str(backup_path))
+
+    cmds.file(rename=str(current_scene_path))
     cmds.file(save=True)
     return backup_path
