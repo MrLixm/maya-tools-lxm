@@ -1,18 +1,15 @@
 # refrepath
 
-Repathing of references in Maya scenes.
+Batch repathing of references in Maya scenes.
 
-The current system of repathing used a "common denominator" logic, where
-a user-provided path entity name is provided to split the source reference
-path and replace the left-most part with the new desired root path.
+The current system of repathing used a "search and replace" logic.
 
 Example :
 
 ```python
 >>> source_reference_path = "Z:/projects/demo/assetA.ma"
->>> common_denominator = "demo"
+>>> search = "*projects"
 >>> new_root_path = "X:/work/pro"
-# we split source_reference_path at "demo" and prefix it with new_root_path:
 "X:/work/pro/demo/assetA.ma"
 ```
 
@@ -26,43 +23,6 @@ _refrepath_ needs Python >= 3.7 to work. Compatible Maya version are:
 - Maya 2022 (3.7.7)
 
 # How to use.
-
-## Individual files
-
-You only need to repath reference in one scene and would like to do it via
-a convenient interface.
-
-- must be executed from a Maya session.
-- find all references in given scene and repath them with the given parameters
-
-### Installation
-
-- Copy and paste the `refrepath` directory (the one with the python files inside) to one
-of the user preferences scripts directory of Maya.
-
-> **Help**: the uers-prefs directory to install python tools are :
-> 1. `C:\Users\{USER}\Documents\maya\scripts`
-> 2. `C:\Users\{USER}\Documents\maya\{VERSION}\scripts`
->
-> Don't install in both, pick one depending on what you want. Option 1. make it
-> accessible for all versions of Maya.
-
-- Start/restart Maya.
-- In the script editor execute
-    ```python
-    import refrepath.gui
-    refrepath.gui.gui()
-    ```
-  (You can put this code in a shelf button for easier access)
-
-### Usage
-
-- Make sure you are on an empty scene before you start the repathing.
-- Give the path to the maya file with reference.
-- Give the path to the new root directory for the left-most part of references.
-- Start the repathing.
-
-## Batch process a directory
 
 You need to process an unknown number of file all at once in a given directory.
 
@@ -101,7 +61,7 @@ Example of executing repathing on a directory
 # linux shell
 cd path/to/refrepath/directory/
 export MAYA_BATCH_PATH="/c/Program Files/Autodesk/Maya2023/bin/mayabatch.exe"
-python -m refrepath "/z/projects/demo"
+python -m refrepath "/z/projects/demo" "*projects/demo" "::use_maya_file_dir"
 ```
 
 This will find all maya files (`.ma` and `.mb`) **recursively** in the directory,
@@ -110,14 +70,9 @@ and for each of them, create a subprocess to open Maya and repath the reference.
 A `.log` file is created at the root of the directory provided AND next to each
 maya file and allow you to check progress and if any error was raised.
 
-You notice that only one argument is provided. The script will assume the directory
-we want to find maya file in, will also be used as new root for reference repathing.
+You only need 3 argument minimum to start the process : 
+- `maya_file_dir` : directory to parse recursively for maya files
+- `search` : Part of the reference's path to replace. A [fnmatch](https://docs.python.org/3/library/fnmatch.html)-compatible pattern.
+- `replace` : Partial path to swap with the result of the search. You can use `"::use_maya_file_dir"` if it is the same as the maya_file_dir.
 
-If you want to specify both individually , you can use `--new_root_dir` :
-
-```shell
-# linux shell
-cd path/to/refrepath/directory/
-export MAYA_BATCH_PATH="/c/Program Files/Autodesk/Maya2023/bin/mayabatch.exe"
-python -m refrepath "/z/projects/demo/assets/env" --new_root_dir "/z/projects/demo"
-```
+Check the `--help` command for additional arguments.

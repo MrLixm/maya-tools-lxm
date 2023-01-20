@@ -91,7 +91,7 @@ def cli():
     )
     parser.add_argument(
         "search",
-        help="Part of the reference's path to replace. A regex-compatible pattern.",
+        help="Part of the reference's path to replace. A fnmatch-compatible pattern.",
         type=str,
     )
     parser.add_argument(
