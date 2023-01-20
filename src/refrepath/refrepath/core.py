@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -38,18 +39,16 @@ class RepathedReference:
 
 def repath_reference(
     node_name,
-    common_denominator: Path,
-    root_substitute: Path,
+    search: str,
+    replace: Path,
 ) -> Optional[RepathedReference]:
     """
     Given the reference node name, edit its path to an existing one, so it can be loaded.
 
     Args:
         node_name: existing maya node name
-        common_denominator:
-            part of the paths common between initial reference's path and the new root_substitute one.
-        root_substitute:
-            new "prefix" part of the path to use
+        search: part of the path to replace. A regex patterns.
+        replace: partial part to swap with the result of the search
 
     Returns:
         result of the repathing as RepathedReference instance
@@ -58,6 +57,7 @@ def repath_reference(
         ValueError: cannot retrieve reference file path
         FileNotFoundError: new path computed doesn't exist on disk
     """
+    # TODO refacto so it doesn't log anything, only raise errors
     try:
         current_path = cmds.referenceQuery(
             node_name,
@@ -75,9 +75,18 @@ def repath_reference(
     current_path = Path(current_path)
     logger.info(f"current_path={current_path}")
 
-    new_path = (
-        root_substitute / str(current_path).split(str(common_denominator), 1)[-1][1::]
-    )
+    search_pattern = re.compile(search)
+    actual_search = search_pattern.match(str(current_path))
+    if not actual_search:
+        logger.error(
+            f"Search pattern doesn't match anything: {search} on {current_path}>"
+        )
+        return None
+
+    actual_search = actual_search.group(0)
+
+    new_path = str(current_path).replace(actual_search, str(replace))
+    new_path = Path(new_path)
 
     if not new_path.exists():
         raise FileNotFoundError(f"New path computed doesn't exist on disk: {new_path}")
@@ -107,18 +116,16 @@ def repath_reference(
 
 def open_and_repath_references(
     maya_file_path: Path,
-    common_denominator: Path,
-    root_substitute: Path,
+    search: str,
+    replace: Path,
 ) -> list[RepathedReference]:
     """
     Open the given maya file and repath all the references inside.
 
     Args:
         maya_file_path:
-        common_denominator:
-            part of the paths common between initial reference's path and the new root_substitute one.
-        root_substitute:
-            new "prefix" part of the path to use
+        search: part of the path to replace. A regex patterns.
+        replace: partial part to swap with the result of the search
 
     Returns:
         list of RepathedReference instances.
@@ -151,8 +158,8 @@ def open_and_repath_references(
         )
         repathed_reference = repath_reference(
             node_name=scene_reference,
-            common_denominator=common_denominator,
-            root_substitute=root_substitute,
+            search=search,
+            replace=replace,
         )
         if repathed_reference:
             repathed_reference_list.append(repathed_reference)

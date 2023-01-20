@@ -9,7 +9,9 @@ description="Repath references in multiple maya files at once."
 """
 import argparse
 import datetime
+import fnmatch
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -88,16 +90,17 @@ def cli():
         type=str,
     )
     parser.add_argument(
-        "--new_root_dir",
-        help="Directory path used as root for reference repathing.",
+        "search",
+        help="Part of the reference's path to replace. A regex-compatible pattern.",
         type=str,
-        default=None,
     )
     parser.add_argument(
-        "--denominator",
-        help="Part of the new_root_dir path used to split the initial reference path.",
+        "replace",
+        help=(
+            "Partial path to swap with the result of the search. "
+            'You can use "::use_maya_file_dir" if it is the same.'
+        ),
         type=str,
-        default=None,
     )
     parser.add_argument(
         "--zfill",
@@ -138,21 +141,24 @@ def cli():
     configure_logging(maya_file_dir, logging_level)
     logger.debug(parsed)
 
-    new_root_dir = parsed.new_root_dir
-    if not new_root_dir:
-        new_root_dir = maya_file_dir
-    else:
-        new_root_dir = Path(new_root_dir)
-    if not new_root_dir.exists():
-        raise FileNotFoundError(
-            f"Given new_root_dir doesn't exist on disk: {new_root_dir}"
-        )
+    search = parsed.search
+    search_pattern = fnmatch.translate(search)
+    search_pattern = search_pattern.replace("\\Z", "").replace("?s:", "")
+    # just to trigger error early
+    pattern = re.compile(search_pattern)
 
-    denominator = parsed.denominator
-    if not denominator:
-        denominator = new_root_dir.name
+    replace = parsed.replace
 
-    denominator = Path(denominator)
+    if not replace:
+        raise ValueError("Missing replace argument.")
+
+    if replace == "::use_maya_file_dir":
+        replace = maya_file_dir
+
+    replace = Path(replace)
+
+    if not replace.exists():
+        raise FileNotFoundError(f"Path from replace argument doesn't exists: {replace}")
 
     if not c.Env.get(c.Env.maya_batch):
         logger.warning("! missing MAYA_BATCH_PATH env var. Using default value.")
@@ -165,8 +171,8 @@ def cli():
 
     batch_directory(
         maya_files_dir=maya_file_dir,
-        new_root_dir=new_root_dir,
-        denominator=denominator,
+        search=search_pattern,
+        replace=replace,
         maya_batch_path=maya_batch,
         ignore_backups=ignore_backups,
     )
