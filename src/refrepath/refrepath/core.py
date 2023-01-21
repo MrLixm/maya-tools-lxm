@@ -57,17 +57,12 @@ def repath_reference(
         ValueError: cannot retrieve reference file path
         FileNotFoundError: new path computed doesn't exist on disk
     """
-    # TODO refacto so it doesn't log anything, only raise errors
-    try:
-        current_path = cmds.referenceQuery(
-            node_name,
-            filename=True,
-            withoutCopyNumber=True,
-        )
-    # some references don't have filepath ??
-    except Exception as excp:
-        logger.error(excp)
-        return None
+    # some references don't have filepath and might raise here
+    current_path = cmds.referenceQuery(
+        node_name,
+        filename=True,
+        withoutCopyNumber=True,
+    )
 
     if not current_path:
         raise ValueError(f"Cannot retrieve reference file path on {node_name}")
@@ -78,10 +73,9 @@ def repath_reference(
     search_pattern = re.compile(search)
     actual_search = search_pattern.match(str(current_path))
     if not actual_search:
-        logger.error(
+        raise ValueError(
             f"Search pattern doesn't match anything: {search} on {current_path}>"
         )
-        return None
 
     actual_search = actual_search.group(0)
 
@@ -156,11 +150,16 @@ def open_and_repath_references(
         logger.info(
             f"{index+1}/{len(scene_reference_list)} Repathing {scene_reference} ..."
         )
-        repathed_reference = repath_reference(
-            node_name=scene_reference,
-            search=search,
-            replace=replace,
-        )
+        try:
+            repathed_reference = repath_reference(
+                node_name=scene_reference,
+                search=search,
+                replace=replace,
+            )
+        except Exception as excp:
+            logger.error(excp)
+            repathed_reference = None
+
         if repathed_reference:
             repathed_reference_list.append(repathed_reference)
 
