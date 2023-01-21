@@ -11,6 +11,7 @@ import argparse
 import datetime
 import fnmatch
 import logging
+import os
 import re
 import sys
 from pathlib import Path
@@ -160,9 +161,9 @@ def cli():
     if not replace.exists():
         raise FileNotFoundError(f"Path from replace argument doesn't exists: {replace}")
 
-    if not c.Env.get(c.Env.maya_batch):
+    if not os.environ.get(c.Env.maya_batch):
         logger.warning("! missing MAYA_BATCH_PATH env var. Using default value.")
-    maya_batch = c.Env.get(
+    maya_batch = os.environ.get(
         c.Env.maya_batch,
         r"C:\Program Files\Autodesk\Maya2023\bin\mayabatch.exe",
     )
