@@ -49,6 +49,9 @@ visible anymore.
 
   Scripts to help exporting references nodes from a scene.
 
+- [`refrepath`](./src/refrepath)
+
+  Batch repathing of references in Maya scenes.
 
 ## Licensing
 
