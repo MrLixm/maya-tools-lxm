@@ -1,0 +1,26 @@
+//Maya Preference 2023 (Release 1)
+//
+//
+evalDeferred("autoLoadPlugin(\"\", \"svgFileTranslator.py\", \"svgFileTranslator\")");
+evalDeferred("autoLoadPlugin(\"\", \"curveWarp\", \"curveWarp\")");
+evalDeferred("autoLoadPlugin(\"\", \"tiffFloatReader\", \"tiffFloatReader\")");
+evalDeferred("autoLoadPlugin(\"\", \"matrixNodes\", \"matrixNodes\")");
+evalDeferred("autoLoadPlugin(\"\", \"AbcImport\", \"AbcImport\")");
+evalDeferred("autoLoadPlugin(\"\", \"cacheEvaluator\", \"cacheEvaluator\")");
+evalDeferred("autoLoadPlugin(\"\", \"deformerEvaluator\", \"deformerEvaluator\")");
+evalDeferred("autoLoadPlugin(\"\", \"sceneAssembly\", \"sceneAssembly\")");
+evalDeferred("autoLoadPlugin(\"\", \"polyBoolean\", \"polyBoolean\")");
+evalDeferred("autoLoadPlugin(\"\", \"gpuCache\", \"gpuCache\")");
+evalDeferred("autoLoadPlugin(\"\", \"AbcExport\", \"AbcExport\")");
+evalDeferred("autoLoadPlugin(\"\", \"objExport\", \"objExport\")");
+evalDeferred("autoLoadPlugin(\"\", \"renderSetup.py\", \"renderSetup\")");
+evalDeferred("autoLoadPlugin(\"\", \"GPUBuiltInDeformer\", \"GPUBuiltInDeformer\")");
+evalDeferred("autoLoadPlugin(\"\", \"ArubaTessellator\", \"ArubaTessellator\")");
+evalDeferred("autoLoadPlugin(\"\", \"OpenEXRLoader\", \"OpenEXRLoader\")");
+evalDeferred("autoLoadPlugin(\"\", \"lookdevKit\", \"lookdevKit\")");
+evalDeferred("autoLoadPlugin(\"\", \"Unfold3D\", \"Unfold3D\")");
+evalDeferred("autoLoadPlugin(\"\", \"Type\", \"Type\")");
+evalDeferred("autoLoadPlugin(\"\", \"quatNodes\", \"quatNodes\")");
+evalDeferred("autoLoadPlugin(\"\", \"fbxmaya\", \"fbxmaya\")");
+evalDeferred("autoLoadPlugin(\"\", \"meshReorder\", \"meshReorder\")");
+evalDeferred("autoLoadPlugin(\"\", \"modelingToolkit\", \"modelingToolkit\")");
