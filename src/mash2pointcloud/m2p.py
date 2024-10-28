@@ -1,5 +1,5 @@
 """
-VERSION=0.0.2
+VERSION=0.0.3
 
 Author: Liam Collod
 Last Modified: 23-01-2022
