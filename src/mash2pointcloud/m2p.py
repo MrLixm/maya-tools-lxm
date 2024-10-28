@@ -437,7 +437,7 @@ class Scene(object):
 
 def run():
 
-    stime = time.clock()
+    stime = time.time()
 
     """scene_config(dict)
     
@@ -489,7 +489,7 @@ def run():
     if user_choice == "Open Folder":
         webbrowser.open(os.path.dirname(export_path))
 
-    logger.info("[run] Finished in <{}>s".format(time.clock() - stime))
+    logger.info("[run] Finished in <{}>s".format(time.time() - stime))
     return
 
 
