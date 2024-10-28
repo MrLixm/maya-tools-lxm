@@ -4,6 +4,10 @@ Export a Mash Network to an Alembic point-cloud.
 
 ![demo](./demo.gif)
 
+> [!WARNING] It seems the script fully work only when using a MASH _Instancer_.
+> When using a _repro_mesh_ only the basic translate/rotate/scale attrbiutes
+> seems to work.
+
 ## Use
 
 1. Copy/paste in script editor
