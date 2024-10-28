@@ -49,8 +49,8 @@ def setup_logging(level):
         handler.setLevel(logging.DEBUG)
         # create a logging format
         formatter = logging.Formatter(
-            '%(asctime)s - [%(levelname)7s] %(name)38s // %(message)s',
-            datefmt='%H:%M:%S'
+            "%(asctime)s - [%(levelname)7s] %(name)38s // %(message)s",
+            datefmt="%H:%M:%S",
         )
         handler.setFormatter(formatter)
         # add the file handler to the logger
@@ -63,7 +63,6 @@ logger = setup_logging(logging.DEBUG)
 
 
 class ParticleSystem(object):
-
     def __init__(self, name):
 
         self.name = name
@@ -95,7 +94,7 @@ class ParticleSystem(object):
             dx=1,
             dy=0,
             dz=0,
-            sp=0
+            sp=0,
         )
         # create the nParticle system
         nparticle = cmds.nParticle()[0]  # type: str
@@ -174,9 +173,7 @@ class ParticleSystem(object):
                 "".format(self.nucleus, excp)
             )
 
-        logger.info(
-            "[ParticleSystem][delete] Finished for <{}>.".format(self.name)
-        )
+        logger.info("[ParticleSystem][delete] Finished for <{}>.".format(self.name))
 
         return
 
@@ -189,10 +186,7 @@ class ParticleSystem(object):
 
         """
 
-        cmds.connectAttr(
-            source,
-            "{}.{}".format(self.shape, target)
-        )
+        cmds.connectAttr(source, "{}.{}".format(self.shape, target))
 
         logger.debug(
             "[ParticleSystem][connect] Finished with source={},target={}."
@@ -245,12 +239,7 @@ class ParticleSystem(object):
         # the viewport was not refreshed.
         cmds.refresh()
 
-        cmds.addAttr(
-            self.shape,
-            ln=name,
-            dataType=data_type,
-            keyable=True
-        )
+        cmds.addAttr(self.shape, ln=name, dataType=data_type, keyable=True)
 
         logger.debug(
             "[ParticleSystem][create_attr] Finished with name=<{}>,"
@@ -348,15 +337,13 @@ def export_abc(meshs, path, attributes=None, frame_range=None, frs=None):
         )
 
     logger.info(
-        "[export_abc] Alembic exported to <{}> for meshs <{}>."
-        "".format(path, meshs)
+        "[export_abc] Alembic exported to <{}> for meshs <{}>." "".format(path, meshs)
     )
 
     return path
 
 
 class Scene(object):
-
     def __init__(self, config):
         """
         Args:
@@ -370,9 +357,7 @@ class Scene(object):
         return
 
     def build(self):
-        """
-
-        """
+        """ """
 
         # get the current selected mash network
         self.mashnw = get_mash_network()
@@ -387,8 +372,7 @@ class Scene(object):
         self.psys.set_playfromcache(True)
         # # connect the MashNetwrok to the Particle System
         self.psys.connect(
-            source="{}.outputPoints".format(self.mashnw),
-            target="cacheArrayData"
+            source="{}.outputPoints".format(self.mashnw), target="cacheArrayData"
         )
 
         for attr_name, attr_data in self.config["build"]["particleSystem"].items():
@@ -396,14 +380,8 @@ class Scene(object):
             self.psys.create_attr(attr_name, attr_data["dataType"])
 
             if attr_data["mashAttr"]:
-                expr = (
-                    "{}.{} = {}.{};"
-                    "".format(
-                        self.psys.shape,
-                        attr_name,
-                        self.mashnw,
-                        attr_data["mashAttr"]
-                    )
+                expr = "{}.{} = {}.{};" "".format(
+                    self.psys.shape, attr_name, self.mashnw, attr_data["mashAttr"]
                 )
                 self.psys.create_expression(expr)
 
@@ -431,16 +409,16 @@ class Scene(object):
         export_path = cmds.fileDialog2(
             caption="Give an export path for the Alembic.",
             fileMode=0,
-        )[0]  # type: str
+        )[
+            0
+        ]  # type: str
 
         if not export_path:
-            raise InterruptedError(
-                "User canceled the alembic export operation.")
+            raise InterruptedError("User canceled the alembic export operation.")
 
         if not export_path.endswith(".abc"):
             raise ValueError(
-                "The given path <{}> doesn't ends with <.abc>"
-                "".format(export_path)
+                "The given path <{}> doesn't ends with <.abc>" "".format(export_path)
             )
 
         # we export the particle system transform node
@@ -449,7 +427,7 @@ class Scene(object):
             path=export_path,
             attributes=self.config["export"]["alembic"]["attributes"],
             frame_range=self.config["export"]["alembic"]["frame_range"],
-            frs=self.config["export"]["alembic"]["frame_relative_samples"]
+            frs=self.config["export"]["alembic"]["frame_relative_samples"],
         )
 
         logger.debug("[Scene][export] Finished.")
@@ -477,27 +455,18 @@ def run():
     scene_config = {
         "build": {
             "particleSystem": {
-                "rotation": {
-                    "dataType": "vectorArray",
-                    "mashAttr": ""
-                },
-                "scale": {
-                    "dataType": "vectorArray",
-                    "mashAttr": ""
-                },
-                "objectIndex": {
-                    "dataType": "vectorArray",
-                    "mashAttr": "inIdPP"
-                }
+                "rotation": {"dataType": "vectorArray", "mashAttr": ""},
+                "scale": {"dataType": "vectorArray", "mashAttr": ""},
+                "objectIndex": {"dataType": "vectorArray", "mashAttr": "inIdPP"},
             },
         },
         "export": {
             "alembic": {
                 "frame_range": [1, 1],
                 "attributes": ["rotation", "scale", "objectIndex"],
-                "frame_relative_samples": []
+                "frame_relative_samples": [],
             }
-        }
+        },
     }
 
     scene = Scene(config=scene_config)
@@ -509,15 +478,15 @@ def run():
 
     # raise a dialog to the user before endign the script
     user_choice = cmds.confirmDialog(
-        title='Abc Exported',
-        message='Abc was exported to:\n{}'.format(export_path),
-        button=['Open Folder', 'Close'],
-        defaultButton='Open Folder',
-        cancelButton='Close',
-        dismissString='Close'
+        title="Abc Exported",
+        message="Abc was exported to:\n{}".format(export_path),
+        button=["Open Folder", "Close"],
+        defaultButton="Open Folder",
+        cancelButton="Close",
+        dismissString="Close",
     )
 
-    if user_choice == 'Open Folder':
+    if user_choice == "Open Folder":
         webbrowser.open(os.path.dirname(export_path))
 
     logger.info("[run] Finished in <{}>s".format(time.clock() - stime))
@@ -525,5 +494,5 @@ def run():
 
 
 # execute script
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()
